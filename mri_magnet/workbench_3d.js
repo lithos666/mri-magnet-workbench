@@ -90,7 +90,8 @@
     constructor(canvas, callbacks = {}) {
       if (!canvas || typeof canvas.getContext !== 'function') throw new Error('3D 预览需要 Canvas 元素。');
       this.canvas = canvas; this.onInspect = callbacks.onInspect || (() => {}); this.onStatus = callbacks.onStatus || (() => {});
-      this.options = {cubes:true, vectors:true, target:true, bore:true, gizmo:true, cutaway:false, explode:0};
+      this.options = {cubes:true, vectors:true, target:true, bore:true, gizmo:true, cutaway:false, explode:0,fieldSlices:true,sensitivity:false};
+      this.analysis=null;this._analysisSignature='';
       this.camera = {azimuth:-Math.PI / 3, elevation:.52, zoom:1, pan:[0,0]};
       this.config = {}; this.design = null; this.label = ''; this.magnets = []; this.displayMagnets = [];
       this.active = true; this.disposed = false; this.dirty = true; this.geometryDirty = true; this.frameCount = 0;
@@ -122,7 +123,7 @@
           this.gl=gl;this.program=program;gl.useProgram(program);
           this.locations={position:gl.getAttribLocation(program,'aPosition'),color:gl.getAttribLocation(program,'aColor')};
           for(const name of ['Right','Up','Eye','Center','Scale'])this.locations[name]=gl.getUniformLocation(program,'u'+name);
-          this.buffers={};for(const name of ['solids','edges','vectors','references','highlight'])this.buffers[name]={buffer:gl.createBuffer(),count:0};
+          this.buffers={};for(const name of ['solids','edges','vectors','references','highlight','slices'])this.buffers[name]={buffer:gl.createBuffer(),count:0};
           gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
           this.mode='webgl';
           return;
@@ -198,6 +199,7 @@
       if(this.disposed)return;
       const signature=JSON.stringify({rings:design?.rings,cube:design?.cube_mm,config:{envelope:config.envelope,target:config.target,manufacturing:config.manufacturing}});
       this.label=String(label||design?.name||'包络与成像区域');this.config=config||{};
+      this.design=design;this.setAnalysis(this.analysis);
       if(signature===this._geometrySignature){this._status();return;}
       this._geometrySignature=signature;
       let next;this.geometryError='';
@@ -211,6 +213,13 @@
       const ids=new Set(next.map(m=>m.magnet_id));if(!ids.has(this.selectedId))this.selectedId=null;if(!ids.has(this.hoveredId))this.hoveredId=null;
       this._transition=old.size&&next.length&&!this.reducedMotion?{start:root.performance.now(),old,duration:320}:null;
       this.displayMagnets=next;this.geometryDirty=true;this._notify(true);this._status();this.invalidate();
+    }
+
+    setAnalysis(analysis=null){
+      const valid=root.MRIAnalysis?.matchingAnalysis(analysis,this.design,this.config)||null;
+      const signature=valid?JSON.stringify([valid.design_sha256,valid.slices,valid.tolerance?.sensitivity_rings]):'';
+      this.analysis=valid;if(signature===this._analysisSignature)return;
+      this._analysisSignature=signature;this.geometryDirty=true;this.invalidate();
     }
 
     setOptions(values={}) {
@@ -300,6 +309,7 @@
           for(let j=0;j<8;j++){const longitude=j*Math.PI/8;for(let k=0;k<72;k++){const a=k*TAU/72,b=(k+1)*TAU/72;put([radius*Math.cos(a)*Math.cos(longitude),radius*Math.cos(a)*Math.sin(longitude),radius*Math.sin(a)],[radius*Math.cos(b)*Math.cos(longitude),radius*Math.cos(b)*Math.sin(longitude),radius*Math.sin(b)],color);}}
         }
       }
+      if(this.options.sensitivity&&!this._transition)for(const item of root.MRIAnalysis?.sensitiveRings(this.analysis,this.design)||[]){const e=this.options.explode||0,radius=item.radius_mm*(1+.32*e),z=item.z_mm*(1+.75*e),color=item.color.map(value=>value/255).concat(.95);for(let i=0;i<96;i++){const a=i*TAU/96,b=(i+1)*TAU/96,first=[radius*Math.cos(a),radius*Math.sin(a),z],second=[radius*Math.cos(b),radius*Math.sin(b),z];if(this.options.cutaway&&(first[1]<-1e-8||second[1]<-1e-8))continue;put(first,second,color);}}
       return lines;
     }
 
@@ -310,7 +320,7 @@
     }
 
     _buildBuffers(){
-      const solids=[],outlines=[],vectors=[],references=[],push=(arr,p,c)=>arr.push(p[0],p[1],p[2],c[0],c[1],c[2],c[3]??1),line=(arr,a,b,c)=>{push(arr,a,c);push(arr,b,c);};
+      const solids=[],outlines=[],vectors=[],references=[],slices=[],push=(arr,p,c)=>arr.push(p[0],p[1],p[2],c[0],c[1],c[2],c[3]??1),line=(arr,a,b,c)=>{push(arr,a,c);push(arr,b,c);};
       const light=normalize([-.35,-.6,1]);
       for(const m of this.displayMagnets){
         if(this.options.cutaway&&m.position_mm[1]<-1e-8)continue;
@@ -323,8 +333,9 @@
         if(this.options.vectors)for(const segment of this._arrows(m))line(vectors,segment[0],segment[1],this.options.cubes?[.97,.98,1,.96]:base.concat(.95));
       }
       for(const item of this._referenceLines())line(references,item.a,item.b,item.color);
+      if(this.options.fieldSlices&&!this._transition)for(const cell of root.MRIAnalysis?.sliceCells(this.analysis,{cutaway:this.options.cutaway})||[])for(const index of [0,1,2,0,2,3])push(slices,cell.points[index],cell.color.map(value=>value/255).concat(.62));
       const gl=this.gl;
-      for(const [name,array] of Object.entries({solids,edges:outlines,vectors,references})){
+      for(const [name,array] of Object.entries({solids,edges:outlines,vectors,references,slices})){
         const record=this.buffers[name];gl.bindBuffer(gl.ARRAY_BUFFER,record.buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(array),gl.DYNAMIC_DRAW);record.count=array.length/7;
       }
     }
@@ -333,7 +344,7 @@
       const gl=this.gl,v=this._view();gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.clearColor(.981,.986,.990,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(this.program);
       for(const [name,value] of Object.entries({Right:v.right,Up:v.up,Eye:v.towardEye,Center:v.center,Scale:[1/v.halfWidth,1/v.halfHeight,1/v.depth]}))gl.uniform3fv(this.locations[name],value);
       const draw=(name,type)=>{const item=this.buffers[name];if(!item.count)return;gl.bindBuffer(gl.ARRAY_BUFFER,item.buffer);gl.enableVertexAttribArray(this.locations.position);gl.vertexAttribPointer(this.locations.position,3,gl.FLOAT,false,28,0);gl.enableVertexAttribArray(this.locations.color);gl.vertexAttribPointer(this.locations.color,4,gl.FLOAT,false,28,12);gl.drawArrays(type,0,item.count);};
-      draw('solids',gl.TRIANGLES);draw('edges',gl.LINES);gl.depthMask(false);draw('references',gl.LINES);draw('vectors',gl.LINES);gl.depthMask(true);
+      draw('solids',gl.TRIANGLES);draw('edges',gl.LINES);gl.depthMask(false);draw('slices',gl.TRIANGLES);draw('references',gl.LINES);draw('vectors',gl.LINES);gl.depthMask(true);
       const id=this.hoveredId||this.selectedId,active=this.displayMagnets.find(m=>m.magnet_id===id);
       if(active){
         const array=[],put=(p,color)=>array.push(...p,...color);
@@ -351,9 +362,10 @@
         const vertices=cubeVertices(m,this.options.explode),points=vertices.map(p=>this._project(p,view)),c=Math.cos(m.theta),s=Math.sin(m.theta),base=rgb(m.color);
         if(this.options.cubes)for(const face of faces){const n=[face.n[0]*c-face.n[1]*s,face.n[0]*s+face.n[1]*c,face.n[2]];if(dot(n,view.towardEye)<=0)continue;const shade=.62+.38*Math.max(0,dot(n,normalize([-.35,-.6,1])));projected.push({points:face.v.map(i=>points[i]),depth:face.v.reduce((sum,i)=>sum+points[i].depth,0)/4,color:base.map(x=>Math.round(x*shade*255)),magnet:m});}
       }
+      if(this.options.fieldSlices&&!this._transition)for(const cell of root.MRIAnalysis?.sliceCells(this.analysis,{cutaway:this.options.cutaway})||[]){const points=cell.points.map(point=>this._project(point,view));projected.push({points,depth:points.reduce((sum,p)=>sum+p.depth,0)/4,color:cell.color,slice:true});}
       projected.sort((a,b)=>a.depth-b.depth);
       const active=this.displayMagnets.find(m=>m.magnet_id===(this.hoveredId||this.selectedId));
-      for(const face of projected){ctx.beginPath();face.points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle='rgb('+face.color.join(',')+')';ctx.fill();ctx.strokeStyle=active?.magnet_id===face.magnet.magnet_id?'#ffc059':active?.ring_id===face.magnet.ring_id?'#70d5c5':'#20334966';ctx.lineWidth=active?.magnet_id===face.magnet.magnet_id?1.8:active?.ring_id===face.magnet.ring_id?1.1:.45;ctx.stroke();}
+      for(const face of projected){ctx.beginPath();face.points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=(face.slice?'rgba(':'rgb(')+face.color.join(',')+(face.slice?',.62)':')');ctx.fill();if(face.slice)continue;ctx.strokeStyle=active?.magnet_id===face.magnet.magnet_id?'#ffc059':active?.ring_id===face.magnet.ring_id?'#70d5c5':'#20334966';ctx.lineWidth=active?.magnet_id===face.magnet.magnet_id?1.8:active?.ring_id===face.magnet.ring_id?1.1:.45;ctx.stroke();}
       const stroke=(a,b,color,width=.7)=>{const p=this._project(a,view),q=this._project(b,view);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();};
       for(const item of this._referenceLines())stroke(item.a,item.b,`rgba(${item.color.slice(0,3).map(x=>Math.round(x*255)).join(',')},${item.color[3]})`);
       if(this.options.vectors)for(const m of this.displayMagnets){if(this.options.cutaway&&m.position_mm[1]<-1e-8)continue;const centerDepth=this._project(displayCenter(m,this.options.explode),view).depth;

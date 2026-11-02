@@ -28,5 +28,11 @@ WORKBENCH_CONFIG["target"] = {
 # WORKBENCH_CONFIG["search"]["optimize_azimuth_count"] = True
 # WORKBENCH_CONFIG["target"]["geometry"] = "disk"  # 保留2cm、z=0平面FOV能力。
 # 本轮完整工程参数独立保存在 工程案例_100mmDSV.json；不会覆盖旧工程。
+# 按需工程分析位于右侧“谐波 / 公差”，不覆盖原优化或密集验收指标。
+# 公差为均匀分布半幅：analysis.tolerance.remanence_half_range_fraction=0.015，
+# analysis.tolerance.sector_translation_half_range_mm=0.15；不是高斯标准差。
+# WORKBENCH_CONFIG["analysis"]["mutual_demag"]["quadrature_order"] = 2  # 8点目标体积平均
+# WORKBENCH_CONFIG["analysis"]["tolerance"]["trials"] = 200
+# WORKBENCH_CONFIG["de_novo"]["harmonic_order_weights"] = {"2": 1., "4": 1., "6": .25, "8": .1}
 
 CONFIG = legacy_view(WORKBENCH_CONFIG, legacy_runtime_options())

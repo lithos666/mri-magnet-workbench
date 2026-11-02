@@ -20,7 +20,8 @@ DEFAULTS = {
         "min_axial_module_gap_mm": 0., "bed_fit_mode": "fixed_envelope"},
     "de_novo": {"pair_counts": [5, 6, 7, 8], "column_counts": [24, 26, 28, 30, 32, 34, 36],
                 "seed_count": 4, "milp_time_limit_seconds": 3., "transverse_weight": .05,
-                "field_margin_ratio": .005, "radial_candidate_count": None, "candidate_pool_size": None, "sparsity_weight": 1e-9},
+                "field_margin_ratio": .005, "radial_candidate_count": None, "candidate_pool_size": None, "sparsity_weight": 1e-9,
+                "harmonic_order_weights": {"2": 1., "4": 1., "6": .25, "8": .1}},
     "search": {"optimize_radius": True, "optimize_axial_positions": True,
                "axial_shift_limit_mm": 25., "optimize_azimuth_count": False,
                "optimize_radial_ring_count": False, "min_radial_rings_per_layer": 1,
@@ -45,6 +46,13 @@ DEFAULTS = {
     "comsol_root": "D:/comsol/COMSOL62/Multiphysics",
     "chunk_points": 96, "polarization_model": "remanence", "density_kg_m3": 7500.,
     "seed": 20261101, "max_validation_candidates": 5,
+    "analysis": {"slice_grid_size": 21, "integration_volume": 128, "integration_surface": 128,
+        "slice_color_limit_ppm": None, "harmonic_max_degree": 8, "max_source_point_pairs": 75000000,
+        "mutual_demag": {"enabled": False, "quadrature_order": 1, "max_unknowns": 1200,
+            "max_magnets": 10000, "max_matrix_mb": 128., "chunk_points": 48},
+        "tolerance": {"enabled": False, "trials": 200, "remanence_half_range_fraction": .015,
+            "sector_translation_half_range_mm": .15, "translation_fd_step_mm": .05,
+            "max_memory_mb": 192.}},
 }
 
 
@@ -125,4 +133,33 @@ def validate_spec(config):
             positive(synthesis['radial_candidate_count'],'de_novo.radial_candidate_count',integer=True)
         if synthesis.get('candidate_pool_size') is not None:
             positive(synthesis['candidate_pool_size'],'de_novo.candidate_pool_size',integer=True)
+        weights=synthesis.get('harmonic_order_weights',{})
+        if not isinstance(weights,dict):errors.append('harmonic_order_weights 必须为阶次到权重的对象');weights={}
+        for order,value in weights.items():
+            if str(order) not in ('2','4','6','8'):errors.append('轴向特征阶次只能为2/4/6/8')
+            positive(value,'de_novo.harmonic_order_weights.'+str(order),zero=True)
+        if synthesis.get('harmonic_max_order') is not None:
+            if synthesis['harmonic_max_order'] not in (0,2,4,6,8):errors.append('harmonic_max_order 必须为0/2/4/6/8')
+    analysis=config.get('analysis',{})
+    if not isinstance(analysis,dict):return errors+['analysis必须为对象']
+    for key in ('slice_grid_size','integration_volume','integration_surface','harmonic_max_degree'):
+        if key in analysis:positive(analysis[key],'analysis.'+key,integer=True)
+    bounds={'slice_grid_size':(5,65),'integration_volume':(1,1024),'integration_surface':(1,1024),'harmonic_max_degree':(2,12)}
+    for key,(low,high) in bounds.items():
+        try:
+            if key in analysis and not low<=float(analysis[key])<=high:errors.append('analysis.'+key+'超出允许范围')
+        except (ValueError,TypeError):pass
+    if analysis.get('slice_color_limit_ppm') is not None:positive(analysis['slice_color_limit_ppm'],'analysis.slice_color_limit_ppm')
+    if 'max_source_point_pairs' in analysis:positive(analysis['max_source_point_pairs'],'analysis.max_source_point_pairs',integer=True)
+    for section in ('mutual_demag','tolerance'):
+        if not isinstance(analysis.get(section,{}),dict):errors.append('analysis.'+section+'必须为对象');continue
+        if not isinstance(analysis.get(section,{}).get('enabled',False),bool):errors.append('analysis.'+section+'.enabled必须为布尔值')
+    tolerance=analysis.get('tolerance',{}) if isinstance(analysis.get('tolerance',{}),dict) else {}
+    for key in ('trials','translation_fd_step_mm','max_memory_mb'):
+        if key in tolerance:positive(tolerance[key],'analysis.tolerance.'+key,integer=key=='trials')
+    for key in ('remanence_half_range_fraction','sector_translation_half_range_mm'):
+        if key in tolerance:positive(tolerance[key],'analysis.tolerance.'+key,zero=True)
+    try:
+        if float(tolerance.get('remanence_half_range_fraction',.015))>=1:errors.append('剩磁公差半幅必须小于1')
+    except (ValueError,TypeError):pass
     return errors

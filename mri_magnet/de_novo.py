@@ -28,7 +28,45 @@ from .serialization import save_json
 
 MIRROR_POLARITY = {"out": "in", "in": "out", "down": "down", "up": "up"}
 STYLES = ("compact", "wide", "counterphase", "end_compensated", "hybrid")
-_BASIS_VERSION = "mirrored-cuboid-unit-Br-v2-relative-mean"
+_BASIS_VERSION = "mirrored-cuboid-unit-Br-v3-axis-through-Z8"
+
+
+def _axis_features(values, t):
+    """Even axis-polynomial coefficients, fitted in a conditioned basis.
+
+    This is a 1D synthesis surrogate, not the full 3D spherical spectrum.
+    Legendre fitting improves conditioning; returned coefficients multiply
+    powers 1,t^2,t^4,t^6,t^8 with t=z/(target_diameter/2).
+    """
+    degrees = (0, 2, 4, 6, 8)
+    matrix = np.polynomial.legendre.legvander(t, 8)[:, degrees]
+    converted = np.zeros((5, 5))
+    for j, degree in enumerate(degrees):
+        unit = np.zeros(degree+1); unit[degree] = 1.
+        monomial = np.polynomial.legendre.leg2poly(unit)
+        converted[:len(monomial[::2]), j] = monomial[::2]
+    fit = converted @ np.linalg.pinv(matrix)
+    return fit @ values, float(np.linalg.cond(matrix))
+
+
+def _axis_order_weights(config, available_orders):
+    options = config.get('de_novo', {})
+    default_order = 8 if config.get('target', {}).get('geometry', 'sphere') == 'sphere' else 0
+    maximum = options.get('harmonic_max_order', default_order)
+    if isinstance(maximum, bool) or maximum not in (0, 2, 4, 6, 8):
+        raise ValueError('harmonic_max_order must be one of 0,2,4,6,8')
+    configured = options.get('harmonic_order_weights', {})
+    if not isinstance(configured, dict) or any(str(key) not in ('2', '4', '6', '8') for key in configured):
+        raise ValueError('harmonic_order_weights must map orders 2,4,6,8 to nonnegative weights')
+    default = {2: 1., 4: 1., 6: .25, 8: .1}
+    result = {}
+    for degree in (2, 4, 6, 8):
+        weight = float(configured.get(str(degree), configured.get(degree, default[degree])))
+        if not math.isfinite(weight) or weight < 0:
+            raise ValueError('harmonic_order_weights must be finite and nonnegative')
+        if degree <= maximum and degree in available_orders and weight > 0:
+            result[degree] = weight
+    return result
 
 
 def _radial_lattice(packing, style, requested=None):
@@ -211,8 +249,11 @@ def build_basis(config, sample, pair_count, column_count, style="wide", engine=N
     z_center = float(config["target"].get("z_mm", 0.))
     if not math.isfinite(diameter) or diameter <= 0 or not math.isfinite(z_center):
         raise ValueError("Synthesis domain diameter must be positive and center finite")
-    axis_z = np.linspace(-diameter/2, diameter/2, 9)
-    feature_points = np.c_[np.zeros(9), np.zeros(9), axis_z + z_center]
+    # Twenty-one symmetric Lobatto nodes resolve through eighth order without
+    # relying on the old nine-point, four-term fit. Endpoints stay explicit.
+    axis_t = np.cos(np.linspace(np.pi, 0., 21))
+    axis_z = axis_t*diameter/2
+    feature_points = np.c_[np.zeros(len(axis_t)), np.zeros(len(axis_t)), axis_z + z_center]
     observers = np.vstack((points, feature_points, [0., 0., z_center]))
     descriptors = []
     for k, z in enumerate(z_values):
@@ -254,15 +295,13 @@ def build_basis(config, sample, pair_count, column_count, style="wide", engine=N
             temporary = cache_path.with_suffix(".tmp.npz")
             np.savez_compressed(temporary, fingerprint=np.array(digest), field=values)
             temporary.replace(cache_path)
-    # Polynomial coefficients in t=z/(D/2). These are low-order axis features,
-    # not a claim that the full field is axisymmetric or exactly spherical.
-    t = np.linspace(-1., 1., 9)
-    fit = np.linalg.pinv(np.column_stack((np.ones(9), t*t, t**4, t**6)))
-    coeff = fit @ values[len(points):len(points)+9, 2, :]
-    return {"A_T_per_T": values[:len(points)], "axis_A_T_per_T": values[len(points):len(points)+9],
+    # Axis features and the full spherical diagnostic have distinct purposes.
+    coeff, axis_condition = _axis_features(values[len(points):len(points)+len(axis_t), 2, :], axis_t)
+    return {"A_T_per_T": values[:len(points)], "axis_A_T_per_T": values[len(points):len(points)+len(axis_t)],
             "center_A_T_per_T": values[-1], "mean_Az_T_per_T":weights@values[:len(points),2,:],
             "quadrature_weights":weights,"pointset":sample.get('name'),
-            "axis_coefficients_T_per_T": coeff,
+            "axis_coefficients_T_per_T": coeff, 'axis_coefficient_orders': [0, 2, 4, 6, 8],
+            'axis_fit_condition_number': axis_condition,
             "axis_feature_points_mm": feature_points, "basis": descriptors,
             "fingerprint": digest, "cache_hit": cached, "unit_remanence_T": 1.,
             "pair_count": pair_count, "column_count": column_count, "style": style,
@@ -362,8 +401,13 @@ def _solve_basis(basis, config):
     harmonic_weight = float(options.get("harmonic_weight", 2.))
     if not math.isfinite(harmonic_weight) or harmonic_weight < 0:
         raise ValueError("harmonic_weight must be finite and nonnegative")
-    for coefficient in basis["axis_coefficients_T_per_T"][1:3]:
-        row=np.zeros(size);row[count:2*count]=coefficient*scale*harmonic_weight;row[error_index]=-1.
+    axis_coefficients = np.asarray(basis['axis_coefficients_T_per_T'])
+    axis_orders = basis.get('axis_coefficient_orders', list(range(0, 2*len(axis_coefficients), 2)))
+    order_weights = _axis_order_weights(config, axis_orders)
+    for degree, coefficient in zip(axis_orders, axis_coefficients):
+        if degree not in order_weights:
+            continue
+        row=np.zeros(size);row[count:2*count]=coefficient*scale*harmonic_weight*order_weights[degree];row[error_index]=-1.
         constraint(row, hi=0.)
         opposite = -row; opposite[error_index] = -1.
         constraint(opposite, hi=0.)
@@ -393,7 +437,9 @@ def _solve_basis(basis, config):
                   'radial_conflict_constraints':conflict_count,
                   'radial_rings_per_layer_range':[minimum_rings, maximum_rings],
                   'elapsed_solver_seconds':time.perf_counter()-started,'configured_solver_seconds':seconds,
-                  "harmonic_feature": "normalized-axis even Bz coefficients Z2, Z4",
+                  "harmonic_feature": "1D normalized-axis even Bz polynomial; not full spherical harmonic decomposition",
+                  'harmonic_orders': list(order_weights), 'harmonic_order_weights': order_weights,
+                  'axis_fit_condition_number': basis.get('axis_fit_condition_number'),
                   "homogeneity_constraint": "weighted axial/transverse relative minimax surrogate; exact |B| ppm independently evaluated"}
     if solved.x is None:
         return None, diagnostic

@@ -184,6 +184,45 @@ class Workbench:
         self._complete_view_state(result)
         return result
 
+    def analyze(self, design=None, source_label='', analysis_options=None):
+        """Separate on-demand diagnostics; keep Step5/6 acceptance immutable."""
+        from .field_analysis import analyze_design
+        from .identity import canonical_physical_sha256
+        with self._lock:
+            config=deepcopy(self.config)
+            if design is None:
+                row=self.data.get('best') or self.data.get('current_best')
+                if not row:
+                    selected=self._selected();row=selected[0] if selected else None
+                design=deepcopy(row.get('design')) if isinstance(row,dict) else None
+            if not self._valid_view_design(design) or not design.get('rings') or design.get('preview_only'):
+                raise ValueError('请先生成并选择真实磁体方案；初步几何示意不参与工程分析')
+            value=Design.from_dict(design)
+            if len(value.rings)>400 or value.magnet_count>10000:raise ValueError('按需分析上限为400环、10000块')
+            if not math.isfinite(value.remanence_T) or value.remanence_T<=0 or not math.isfinite(value.reference_mur) or value.reference_mur<1:
+                raise ValueError('分析要求有限正剩磁，回复相对磁导率不小于1')
+            material=config['magnet']
+            if any(not math.isclose(float(getattr(value,key)),float(material[key]),rel_tol=1e-10,abs_tol=1e-10) for key in ('cube_mm','remanence_T','reference_mur')):
+                raise ValueError('所选方案材料与当前工程配置不一致；请先保存一致的配置')
+            check=validate_design(value,envelope_for(config))
+            if not check['valid']:raise ValueError('分析几何不合法: '+'；'.join(check['violations'][:6]))
+            errors=validate_spec(config)
+            if errors:raise ValueError('；'.join(errors))
+            identity=json.dumps(config,sort_keys=True,allow_nan=False)
+        stamp=datetime.now(timezone(timedelta(hours=8))).strftime('%Y%m%d_%H%M%S_%f')
+        folder=self.root/'工程分析'/(stamp+'_'+canonical_physical_sha256(value)[:10])
+        report=analyze_design(value,config,folder,analysis_options,source_label)
+        report['manufacturing_audit']=audit_manufacturing(value,config['manufacturing'],envelope_for(config))
+        report['artifacts']={key:self._relative(folder/name) for key,name in (
+            ('report','工程分析.json'),('overview','工程分析速览.md'),('harmonics','harmonics.png')) if (folder/name).is_file()}
+        with self._lock:
+            if json.dumps(self.config,sort_keys=True,allow_nan=False)!=identity:
+                raise RuntimeError('分析期间配置已改变；结果文件已保留，但不作为当前方案显示')
+            self.data['analysis']=report
+            save_json(folder/'工程分析.json',report)
+            self._save()
+        return report
+
     def _project_file(self, value):
         if not isinstance(value,str) or not value:return None
         try:
@@ -391,6 +430,7 @@ class Workbench:
         self.data['artifacts'] = {}; self.data['error'] = None
         self.data.pop('best',None);self.data.pop('current_best',None)
         self.data.pop('pareto_recommendations',None)
+        self.data.pop('analysis',None)
         if first<=2:self.data.pop('preflight',None)
         if first<=5:
             for key in ('solver_preflight','evolution','optimization_metadata','island_statuses'):self.data.pop(key,None)
@@ -400,6 +440,9 @@ class Workbench:
         updated = canonicalize_config(config,base=self.config,validate=False)
         if updated != self.config:
             changed={key for key in updated if updated.get(key)!=self.config.get(key)}
+            if changed=={'analysis'}:
+                self.data['config']=updated;self.data.pop('analysis',None)
+                self._save();return self.state()
             first=6
             if changed & {'mode','source_geometry','target'}: first=1
             elif changed & {'envelope','magnet','manufacturing'}: first=2

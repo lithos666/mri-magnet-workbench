@@ -35,7 +35,8 @@ export class StudioViewer {
     try{context=canvas.getContext('webgl2',{alpha:true,antialias:true,depth:true});}catch{}
     if(!context)return new window.MRIMagnet3D.Viewer(canvas,callbacks);
     this.canvas=canvas;this.onInspect=callbacks.onInspect||(()=>{});this.onStatus=callbacks.onStatus||(()=>{});
-    this.options={cubes:true,vectors:true,target:true,bore:true,gizmo:true,cutaway:false,explode:0};
+    this.options={cubes:true,vectors:true,target:true,bore:true,gizmo:true,cutaway:false,explode:0,fieldSlices:true,sensitivity:false};
+    this.analysis=null;this._analysisSignature='';
     this.magnets=[];this.displayMagnets=[];this.design=null;this.config={};this.label='';
     this.active=true;this.disposed=false;this.frameCount=0;this.selectedId=null;this.hoveredId=null;this.inspectedId=null;
     this._listeners=[];this._frame=null;this._transition=null;this._signature='';this._hasFit=false;this._homeDistance=1000;
@@ -48,8 +49,8 @@ export class StudioViewer {
       this.scene=new THREE.Scene();this.studio=setupStudio(this.renderer,this.scene);
       this.camera=new THREE.PerspectiveCamera(MRI_REFERENCE_STYLE.fov,1,.1,50000);this.camera.up.set(0,1,0);this.camera.position.set(640,620,940);
       this.assembly=new THREE.Group();this.assembly.quaternion.copy(PRESENTATION);this.scene.add(this.assembly);
-      this.referenceGroup=new THREE.Group();this.vectorGroup=new THREE.Group();this.highlightGroup=new THREE.Group();
-      this.assembly.add(this.referenceGroup,this.vectorGroup,this.highlightGroup);
+      this.referenceGroup=new THREE.Group();this.vectorGroup=new THREE.Group();this.highlightGroup=new THREE.Group();this.sliceGroup=new THREE.Group();this.sensitivityGroup=new THREE.Group();
+      this.assembly.add(this.referenceGroup,this.vectorGroup,this.highlightGroup,this.sliceGroup,this.sensitivityGroup);
       this.controls=new OrbitControls(this.camera,canvas);this.controls.enableDamping=true;this.controls.dampingFactor=MRI_REFERENCE_STYLE.damping;
       this.controls.screenSpacePanning=true;this.controls.maxDistance=50000;this.controls.minDistance=15;
       this.raycaster=new THREE.Raycaster();this.pointer=new THREE.Vector2();this._matrix=new THREE.Matrix4();this._rotation=new THREE.Quaternion();
@@ -102,7 +103,7 @@ export class StudioViewer {
     // A fresh 2D canvas is necessary: an existing WebGL2 canvas cannot change type.
     canvas.getContext=(type,...args)=>/^webgl/.test(type)?null:getContext(type,...args);
     this.canvas=canvas;this._fallback=new window.MRIMagnet3D.Viewer(canvas,{onInspect:this.onInspect,onStatus:this.onStatus});
-    this._fallback.update({design:this.design,config:this.config,label:this.label});this._fallback.setOptions(this.options);this._fallback.setActive(this.active);
+    this._fallback.update({design:this.design,config:this.config,label:this.label});this._fallback.setOptions(this.options);this._fallback.setAnalysis?.(this.analysis);this._fallback.setActive(this.active);
     this.onStatus({renderer:'canvas2d',message:'图形设备中断，已切换本地兼容视图'});
   }
 
@@ -111,6 +112,7 @@ export class StudioViewer {
     if(this.disposed)return;
     const previousLabel=this.label,previousHasModel=this.magnets.length>0,previousTopology=this.magnets.map(m=>m.magnet_id).join('|');
     this.design=design;this.config=config||{};this.label=String(label||design?.name||'包络参考');
+    this.setAnalysis(this.analysis);
     const signature=JSON.stringify({rings:design?.rings,cube:design?.cube_mm,envelope:config.envelope,target:config.target,manufacturing:config.manufacturing});
     if(signature===this._signature){this._status();return;}this._signature=signature;
     const previous=new Map(this.displayMagnets.map(m=>[m.magnet_id,m]));
@@ -122,6 +124,31 @@ export class StudioViewer {
     if(!this._hasFit){this._fit('iso');this._hasFit=true;}
     else if(previousHasModel!==(this.magnets.length>0)||previousLabel!==this.label||previousTopology!==this.magnets.map(m=>m.magnet_id).join('|'))this._fit(null,true);
     this.invalidate();
+  }
+
+  setAnalysis(analysis=null){
+    if(this._fallback){this.analysis=analysis;return this._fallback.setAnalysis?.(analysis);}
+    const valid=window.MRIAnalysis?.matchingAnalysis(analysis,this.design,this.config)||null;
+    const signature=valid?JSON.stringify([valid.design_sha256,valid.slices,valid.tolerance?.sensitivity_rings]):'';
+    this.analysis=valid;if(signature===this._analysisSignature)return;
+    this._analysisSignature=signature;this._rebuildSlices();this._rebuildSensitivity();this.invalidate();
+  }
+  _rebuildSlices(){
+    if(!this.sliceGroup)return;this._clearGroup(this.sliceGroup);
+    const cells=window.MRIAnalysis?.sliceCells(this.analysis,{cutaway:this.options.cutaway})||[];
+    const positions=[],colors=[];
+    for(const cell of cells)for(const index of [0,1,2,0,2,3]){positions.push(...cell.points[index]);colors.push(...cell.color.map(value=>value/255));}
+    if(positions.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+      const material=new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.62,side:THREE.DoubleSide,depthWrite:false,toneMapped:false});const mesh=new THREE.Mesh(geometry,material);mesh.renderOrder=12;this.sliceGroup.add(mesh);}
+    if(this.sliceGroup)this.sliceGroup.visible=Boolean(this.options?.fieldSlices&&this.analysis&&!this._transition);
+  }
+  _rebuildSensitivity(){
+    if(!this.sensitivityGroup)return;this._clearGroup(this.sensitivityGroup);
+    const positions=[],colors=[],e=this.options.explode||0;
+    for(const ring of window.MRIAnalysis?.sensitiveRings(this.analysis,this.design)||[]){const radius=ring.radius_mm*(1+.32*e),z=ring.z_mm*(1+.75*e),color=ring.color.map(value=>value/255);
+      for(let i=0;i<96;i++){const a=i*TAU/96,b=(i+1)*TAU/96,first=[radius*Math.cos(a),radius*Math.sin(a),z],second=[radius*Math.cos(b),radius*Math.sin(b),z];if(this.options.cutaway&&(first[1]<-1e-8||second[1]<-1e-8))continue;positions.push(...first,...second);colors.push(...color,...color);}}
+    if(positions.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));const material=new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.95,depthTest:false,depthWrite:false,toneMapped:false});this.sensitivityGroup.add(new THREE.LineSegments(geometry,material));}
+    if(this.sensitivityGroup)this.sensitivityGroup.visible=Boolean(this.options?.sensitivity&&this.analysis&&!this._transition);
   }
 
   _visibleMagnets(){return this.displayMagnets.filter(m=>!this.options.cutaway||m.position_mm[1]>=-1e-8);}
@@ -234,6 +261,10 @@ export class StudioViewer {
     if(this._fallback){this._fallback.setOptions(values);this.options=this._fallback.options;return;}
     const previous={...this.options};for(const key of Object.keys(this.options))if(Object.hasOwn(values,key))this.options[key]=key==='explode'?clamp(finite(values[key],0),0,1):Boolean(values[key]);
     if(previous.cutaway!==this.options.cutaway){const valid=id=>this.magnets.find(m=>m.magnet_id===id)?.position_mm[1]>=-1e-8;if(this.options.cutaway&&!valid(this.selectedId))this.selectedId=null;if(this.options.cutaway&&!valid(this.hoveredId))this.hoveredId=null;this._rebuildInstances();}
+    if(previous.cutaway!==this.options.cutaway)this._rebuildSlices();
+    if(previous.cutaway!==this.options.cutaway||previous.explode!==this.options.explode)this._rebuildSensitivity();
+    if(this.sliceGroup)this.sliceGroup.visible=Boolean(this.options?.fieldSlices&&this.analysis&&!this._transition);
+    if(this.sensitivityGroup)this.sensitivityGroup.visible=Boolean(this.options?.sensitivity&&this.analysis&&!this._transition);
     this._meshes.forEach(mesh=>mesh.visible=this.options.cubes);this._rebuildReferences();this._updateMatrices();
     if(previous.explode!==this.options.explode)this._fit(null,true);this._notify();this._status();this.invalidate();
   }
@@ -274,6 +305,8 @@ export class StudioViewer {
     this._frame=null;if(!this.active||this.disposed||this._fallback)return;
     this._applyPendingSize();
     if(this._transition){const transition=this._transition,part=clamp((time-transition.start)/transition.duration,0,1),t=part*part*(3-2*part);this.displayMagnets=this.magnets.map(m=>{const old=transition.previous.get(m.magnet_id);if(!old)return m;return {...m,theta:old.theta+Math.atan2(Math.sin(m.theta-old.theta),Math.cos(m.theta-old.theta))*t,position_mm:m.position_mm.map((v,i)=>old.position_mm[i]+(v-old.position_mm[i])*t)};});this._updateMatrices();if(part>=1){this._transition=null;this.displayMagnets=this.magnets;}}
+    if(this.sliceGroup)this.sliceGroup.visible=Boolean(this.options?.fieldSlices&&this.analysis&&!this._transition);
+    if(this.sensitivityGroup)this.sensitivityGroup.visible=Boolean(this.options?.sensitivity&&this.analysis&&!this._transition);
     const moved=this.controls.update();this.renderer.render(this.scene,this.camera);this._drawOverlay();this.frameCount++;if(moved||this._transition)this.invalidate();
   }
   _drawOverlay(){
@@ -294,6 +327,6 @@ export class StudioViewer {
   dispose(){
     this.disposed=true;if(this._fallback){this._fallback.dispose();return;}if(this._frame)cancelAnimationFrame(this._frame);if(this._pickFrame)cancelAnimationFrame(this._pickFrame);this._resizeObserver?.disconnect();
     for(const [target,type,fn,options]of this._listeners)target.removeEventListener(type,fn,options);this.controls.dispose();this.studio.dispose();
-    for(const mesh of this._meshes)mesh.dispose();this.geometry.dispose();Object.values(this.materials).forEach(material=>material.dispose());this._clearGroup(this.referenceGroup);this._clearGroup(this.vectorGroup);this._clearGroup(this.highlightGroup);this.renderer.dispose();this.overlay.remove();
+    for(const mesh of this._meshes)mesh.dispose();this.geometry.dispose();Object.values(this.materials).forEach(material=>material.dispose());this._clearGroup(this.referenceGroup);this._clearGroup(this.vectorGroup);this._clearGroup(this.highlightGroup);this._clearGroup(this.sliceGroup);this._clearGroup(this.sensitivityGroup);this.renderer.dispose();this.overlay.remove();
   }
 }

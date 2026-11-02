@@ -12,13 +12,16 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import mimetypes
+import os
 from pathlib import Path
+import socket
 import threading
 from urllib.parse import unquote, urlsplit
 
 
 # Exact packaged resource names: no directory browsing or arbitrary module paths.
 VIEWPORT_ASSETS = {
+    '/assets/workbench_analysis.js': 'workbench_analysis.js',
     '/assets/workbench_3d.js': 'workbench_3d.js',
     '/assets/workbench_preview.js': 'workbench_preview.js',
     '/assets/workbench_studio3d.js': 'workbench_studio3d.js',
@@ -45,7 +48,14 @@ class WorkbenchHTTPServer(ThreadingHTTPServer):
     """A locally bound server; use create_server for deterministic teardown."""
 
     daemon_threads = True
-    allow_reuse_address = True
+    # On Windows SO_REUSEADDR can let two workbenches claim one port and
+    # leave clients talking to the older backend. Require exclusive binding.
+    allow_reuse_address = os.name != 'nt'
+
+    def server_bind(self):
+        if os.name=='nt' and hasattr(socket,'SO_EXCLUSIVEADDRUSE'):
+            self.socket.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
+        super().server_bind()
 
     def __init__(self, address, workbench, project_dir):
         if address[0] != "127.0.0.1":
@@ -54,9 +64,12 @@ class WorkbenchHTTPServer(ThreadingHTTPServer):
         self.project_dir = Path(project_dir).resolve()
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="mri-workbench")
         self.export_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="mri-checkpoint-export")
+        self.analysis_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="mri-engineering-analysis")
         self.job_lock = threading.RLock()
         self.current_future = None
         self.export_future = None
+        self.analysis_future = None
+        self.analysis_job = {"status": "idle"}
         self.export_job = {"status": "idle"}
         self.job = {"status": "idle"}
         self._job_counter = 0
@@ -73,6 +86,7 @@ class WorkbenchHTTPServer(ThreadingHTTPServer):
             job = deepcopy(self.job)
             busy = self.current_future is not None and not self.current_future.done()
             export_job = deepcopy(self.export_job)
+            analysis_job = deepcopy(self.analysis_job)
         result["busy"] = busy
         backend_job=result.get("job") or {}
         result["job"] = dict(backend_job, **job) if job.get('status')!='idle' else dict(job,**backend_job)
@@ -81,6 +95,7 @@ class WorkbenchHTTPServer(ThreadingHTTPServer):
             if solver_step.get('status') in ('passed','stopped_with_result'):
                 result['job']['status']='completed' if solver_step['status']=='passed' else 'stopped_with_result'
         result["export_job"] = export_job
+        result["analysis_job"] = analysis_job
         if job.get("status") == "failed":
             result["error"] = job.get("error")
         for step in result.get("steps", []):
@@ -105,6 +120,31 @@ class WorkbenchHTTPServer(ThreadingHTTPServer):
             self.export_future=self.export_executor.submit(self._execute_export,exporter,options)
             return deepcopy(self.export_job)
 
+    def start_analysis(self, body):
+        analyzer=getattr(self.workbench,'analyze',None)
+        if not callable(analyzer):raise NotImplementedError('此后端尚不支持工程分析')
+        if set(body)-{'design','source_label','analysis_options'}:raise ValueError('未知工程分析请求字段')
+        if body.get('design') is not None and not isinstance(body['design'],dict):raise ValueError('design必须为设计对象')
+        if not isinstance(body.get('source_label',''),str):raise ValueError('source_label必须为文本')
+        options=body.get('analysis_options') or {}
+        if not isinstance(options,dict) or set(options)-{'mutual_demag','tolerance'} or any(not isinstance(v,bool) for v in options.values()):
+            raise ValueError('分析选项仅允许mutual_demag/tolerance布尔开关')
+        with self.job_lock:
+            if any(future is not None and not future.done() for future in (self.current_future,self.export_future,self.analysis_future)):
+                raise RuntimeError('已有求解、导出或工程分析正在运行')
+            self.analysis_job={'status':'running','started_at':datetime.now(timezone.utc).isoformat()}
+            self.analysis_future=self.analysis_executor.submit(self._execute_analysis,analyzer,body)
+            return deepcopy(self.analysis_job)
+
+    def _execute_analysis(self, analyzer, body):
+        try:result=analyzer(**body)
+        except Exception as error:
+            with self.job_lock:self.analysis_job.update(status='failed',error=str(error))
+        else:
+            with self.job_lock:self.analysis_job.update(status='completed',design_sha256=result.get('design_sha256'))
+        finally:
+            with self.job_lock:self.analysis_job['finished_at']=datetime.now(timezone.utc).isoformat()
+
     def _execute_export(self,exporter,options):
         try:
             result=exporter(**options)
@@ -117,6 +157,7 @@ class WorkbenchHTTPServer(ThreadingHTTPServer):
 
     def start_step(self, number, body):
         with self.job_lock:
+            if self.analysis_future is not None and not self.analysis_future.done():raise RuntimeError('工程分析运行期间不能启动求解')
             if self.current_future is not None and not self.current_future.done():
                 raise RuntimeError("已有工序正在运行，请等待完成或先取消。")
             self._job_counter += 1
@@ -149,6 +190,7 @@ class WorkbenchHTTPServer(ThreadingHTTPServer):
         # is delegated to the backend's cancel method when the user requests it.
         self.executor.shutdown(wait=False)
         self.export_executor.shutdown(wait=False)
+        self.analysis_executor.shutdown(wait=False)
 
 
 class WorkbenchHandler(BaseHTTPRequestHandler):
@@ -267,6 +309,10 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
             with self.server.job_lock:
                 busy = (self.server.current_future is not None
                         and not self.server.current_future.done())
+                analysis_busy=self.server.analysis_future is not None and not self.server.analysis_future.done()
+                if analysis_busy and route!='/api/cancel':
+                    self._json({'error':'工程分析正在运行；请等待完成后再修改或启动其他任务'},409)
+                    return
                 if busy and route not in ("/api/cancel","/api/export-current"):
                     self._json({"error": "求解运行期间不能修改工程；请等待或取消。"}, 409)
                     return
@@ -297,6 +343,10 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
                 elif route == '/api/export-current':
                     export_job=self.server.start_export(body)
                     self._json({'export_job':export_job},202)
+                    return
+                elif route == '/api/analysis':
+                    analysis_job=self.server.start_analysis(body)
+                    self._json({'analysis_job':analysis_job},202)
                     return
                 elif route.startswith("/api/step/"):
                     number = int(route[len("/api/step/"):])
