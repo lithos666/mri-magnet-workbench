@@ -1,0 +1,5 @@
+# Python 3.9: the installed interpreter's last compatible Magpylib major-5 release.
+magpylib==5.0.1
+numpy==1.26.4
+scipy==1.13.1
+matplotlib==3.9.2

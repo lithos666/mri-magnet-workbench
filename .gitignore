@@ -1,0 +1,26 @@
+# Local Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Generated simulations, models and machine-specific settings
+results/
+*.mph
+*.mphbin
+*.mph.lock
+*.class
+*.zip
+*.log
+code_snapshot.txt
+.vscode/
+*.code-workspace
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

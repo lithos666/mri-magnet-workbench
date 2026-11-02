@@ -1,0 +1,107 @@
+{
+  "mode": "seeded",
+  "source_geometry": "examples/seeded/placement.json",
+  "target": {
+    "geometry": "disk",
+    "diameter_mm": 20.0,
+    "z_mm": 0.0,
+    "min_field_mT": 30.0,
+    "max_ppm": 1000.0
+  },
+  "auxiliary_cylinder": {
+    "enabled": false,
+    "diameter_mm": 20.0,
+    "length_mm": 20.0
+  },
+  "envelope": {
+    "protected_bore_diameter_mm": 240.0,
+    "max_outer_diameter_mm": 384.187454246,
+    "max_length_mm": 520.0
+  },
+  "magnet": {
+    "cube_mm": 12.0,
+    "remanence_T": 1.43,
+    "reference_mur": 1.05
+  },
+  "manufacturing": {
+    "enabled": true,
+    "layout_mode": "radial_channels",
+    "allow_split_pocket_seams": true,
+    "radial_inner_clearance_mm": 0.0,
+    "pocket_clearance_per_side_mm": 0.2,
+    "pocket_web_mm": 1.2,
+    "inner_wall_mm": 1.2,
+    "outer_wall_mm": 1.2,
+    "base_thickness_mm": 1.6,
+    "min_axial_module_gap_mm": 0.0,
+    "min_central_magnet_gap_mm": 0.0,
+    "printer_bed_mm": [480.0, 480.0, 255.0],
+    "machine_bed_mm": [255.0, 255.0, 255.0],
+    "bed_margin_per_side_mm": 5.0,
+    "sectors_per_layer": 4,
+    "max_magnet_count": 1736,
+    "bed_fit_mode": "fixed_envelope"
+  },
+  "search": {
+    "optimize_radius": true,
+    "optimize_axial_positions": true,
+    "axial_shift_limit_mm": 25.0,
+    "optimize_azimuth_count": false,
+    "optimize_radial_ring_count": false,
+    "min_radial_rings_per_layer": 1,
+    "max_radial_rings_per_layer": null,
+    "azimuth_count_candidates": [24, 26, 28, 30, 32, 34, 36],
+    "topology_limit": 4,
+    "seed_subset_max_candidates": 36
+  },
+  "scoring": {
+    "mode": "ppm",
+    "field_weight": 0.5,
+    "field_gain_scale": 0.1,
+    "ppm_scale": 1000.0
+  },
+  "sampling": {
+    "preset": "quick",
+    "common_symmetry": true,
+    "training_volume": 96,
+    "training_surface": 192,
+    "validation_volume": 2048,
+    "validation_surface": 2048,
+    "refine_starts": 6
+  },
+  "solver": {
+    "max_evaluations": 2400,
+    "population_size": 32,
+    "maxiter": 100,
+    "max_workers": 1,
+    "budget_policy": "strict",
+    "local_refine_evaluations": 240,
+    "active_set_evaluations": 300,
+    "initial_local_fraction": 0.75,
+    "initial_sigma_mm": 0.8,
+    "pair_refine_fraction": 0.4,
+    "pair_max_trials": 12,
+    "active_set_trust_radius": 0.03,
+    "active_set_fd_step": 0.002
+  },
+  "evolution": {
+    "enabled": true,
+    "grid_points": 25,
+    "max_frames": 36,
+    "min_refresh_seconds": 8.0,
+    "generation_interval": 1,
+    "gif_duration_ms": 650
+  },
+  "deliverables": {
+    "compile": false,
+    "runtime_validate": false,
+    "air_radius_mm": 650.0,
+    "timeout_seconds": 300
+  },
+  "comsol_root": "",
+  "polarization_model": "isolated_cube_self_demag",
+  "density_kg_m3": 7500.0,
+  "chunk_points": 48,
+  "max_validation_candidates": 7,
+  "seed": 20261102
+}

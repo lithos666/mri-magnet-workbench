@@ -1,0 +1,63 @@
+import com.comsol.model.Model;
+import com.comsol.model.util.ModelUtil;
+
+/** Read-only sampling of a saved solution. No meshing, solving, or saving. */
+public class MRIExistingSolutionExport {
+  public static Model run() {
+    try {
+      System.out.println("MRI_EXPORT_JOB_ID,@JOB_ID@");
+      Model model = ModelUtil.loadCopy("mriReadOnlyCopy", @MPH_PATH@);
+      double[][] pointsMM = new double[3][@POINT_COUNT@];
+@INITIALIZER_CALLS@
+      double[][] coord = new double[3][@POINT_COUNT@];
+      for (int axis = 0; axis < 3; axis++) {
+        for (int i = 0; i < @POINT_COUNT@; i++) {
+          coord[axis][i] = pointsMM[axis][i] * @COORD_SCALE@;
+        }
+      }
+      String evalTag = "pyReadOnlyInterp";
+      model.result().numerical().create(evalTag, "Interp");
+      model.result().numerical(evalTag).set("data", @DATASET@);
+      model.result().numerical(evalTag).set("expr", new String[] {
+        "@PHYSICS@.Bx", "@PHYSICS@.By", "@PHYSICS@.Bz",
+        "x/1[mm]", "y/1[mm]", "z/1[mm]"
+      });
+      model.result().numerical(evalTag).set("unit", new String[] {"T", "T", "T", "1", "1", "1"});
+      model.result().numerical(evalTag).set("solnum", new int[] {1});
+      model.result().numerical(evalTag).set("matherr", "on");
+      model.result().numerical(evalTag).set("ext", 0.0);
+      model.result().numerical(evalTag).setInterpolationCoordinates(coord);
+      double[][][] data = model.result().numerical(evalTag).getData();
+      if (data.length != 6 || data[0].length != 1 || data[0][0].length != @POINT_COUNT@) {
+        throw new IllegalStateException("Unexpected saved-solution interpolation shape");
+      }
+      // Physical coordinate expressions explicitly verify the interpolation units.
+      for (int i = 0; i < @POINT_COUNT@; i++) {
+        for (int axis = 0; axis < 3; axis++) {
+          if (!Double.isFinite(data[axis + 3][0][i]) ||
+              Math.abs(data[axis + 3][0][i] - pointsMM[axis][i]) > 1e-6) {
+            throw new IllegalStateException("Physical coordinates do not match requested mm coordinates");
+          }
+          if (!Double.isFinite(data[axis][0][i])) {
+            throw new IllegalStateException("Non-finite field: outside stored mesh or undefined expression");
+          }
+        }
+      }
+      System.out.println("MRI_FIELD_HEADER,x_mm,y_mm,z_mm,Bx_T,By_T,Bz_T");
+      for (int i = 0; i < @POINT_COUNT@; i++) {
+        System.out.println("MRI_FIELD_ROW," + data[3][0][i] + "," + data[4][0][i] + "," +
+          data[5][0][i] + "," + data[0][0][i] + "," + data[1][0][i] + "," + data[2][0][i]);
+      }
+      return model;
+    } catch (Exception error) {
+      error.printStackTrace(System.err);
+      throw new RuntimeException("Existing solution export failed; no new FEM solve was requested", error);
+    }
+  }
+
+  public static void main(String[] args) {
+    run();
+  }
+
+@INITIALIZER_METHODS@
+}
