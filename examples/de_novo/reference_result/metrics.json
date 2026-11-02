@@ -1,0 +1,180 @@
+{
+  "historical_reference": true,
+  "fresh_run": false,
+  "note": "真实历史 16 层结果摘录；随附新版 config.json 已扩展至 5～8 对层及更多偶数列，不是历史结果的精确复现配置。",
+  "run_id": "20261102_000152_562952_最优48.08mT_143.673ppm",
+  "mode": "de_novo",
+  "target": {
+    "geometry": "sphere",
+    "diameter_mm": 100.0,
+    "z_mm": 0.0,
+    "min_field_mT": 40.0,
+    "max_ppm": null
+  },
+  "polarization_model": "isolated_cube_self_demag",
+  "magnet": {
+    "cube_mm": 12.0,
+    "remanence_T": 1.43,
+    "reference_mur": 1.05
+  },
+  "optimized_candidate_id": "i01_r02_candidate_000317",
+  "optimized_canonical_physical_sha256": "76f06f46cf94baa730bc4bc78566af5c2566c3cbb1745c9bd16b2eed2b9d32bf",
+  "initial_seed_id": "synthesis_14",
+  "fem_verified": false,
+  "global_optimum_proven": false,
+  "metric_scope": "球形 DSV 体积加权密集采样及连续极值细化；未完成 COMSOL FEM 验证，也未证明全局最优。",
+  "comparison": {
+    "initial": {
+      "label": "同拓扑合成起点（密集复核）",
+      "candidate_id": "synthesis_14",
+      "mean_field_mT": 46.165733053784685,
+      "pp_norm_ppm": 650.8834210674212,
+      "magnet_count": 3248,
+      "ring_count": 116,
+      "layer_count": 16,
+      "pointset": "sphere_D100_V2048_S2048_seed20361105",
+      "n_points": 4103,
+      "polarization_model": "isolated_cube_self_demag",
+      "integration_measure": "volume",
+      "manufacturing_valid": true
+    },
+    "optimized": {
+      "label": "历史均衡推荐方案",
+      "candidate_id": "i01_r02_candidate_000317",
+      "mean_field_mT": 48.07816713232552,
+      "pp_norm_ppm": 143.6727733165897,
+      "magnet_count": 3248,
+      "ring_count": 116,
+      "layer_count": 16,
+      "pointset": "sphere_D100_V2048_S2048_seed20361105",
+      "n_points": 4103,
+      "polarization_model": "isolated_cube_self_demag",
+      "integration_measure": "volume",
+      "manufacturing_valid": true
+    }
+  },
+  "pareto_roles": [
+    {
+      "role": "balanced",
+      "label": "均衡推荐",
+      "candidate_id": "i01_r02_candidate_000317",
+      "mean_field_mT": 48.07816713232552,
+      "pp_norm_ppm": 143.6727733165897,
+      "magnet_count": 3248
+    },
+    {
+      "role": "high_field",
+      "label": "高场强",
+      "candidate_id": "i01_r02_candidate_000019",
+      "mean_field_mT": 57.01175232512695,
+      "pp_norm_ppm": 46085.90178908702,
+      "magnet_count": 3248
+    },
+    {
+      "role": "lowest_ppm",
+      "label": "最低PPM",
+      "candidate_id": "i02_r02_candidate_000307",
+      "mean_field_mT": 45.4830171827669,
+      "pp_norm_ppm": 109.792837850338,
+      "magnet_count": 3456
+    }
+  ],
+  "solver_search_highlights": {
+    "pair_counts": [
+      8
+    ],
+    "column_counts": [
+      24,
+      28,
+      32,
+      36
+    ],
+    "candidate_pool_size": 20,
+    "max_evaluations": 1200,
+    "actual_optimization_field_evaluations": 992,
+    "population_size": 24,
+    "max_workers": 2,
+    "local_refine_evaluations": 64,
+    "active_set_evaluations": 300,
+    "island_round_sizes": [
+      3,
+      2
+    ],
+    "topologies_run": 3,
+    "budget_excludes_seed_selection_and_dense_validation": true,
+    "seed": 20261102
+  },
+  "differences_vs_example_config": [
+    {
+      "parameter": "de_novo.pair_counts",
+      "historical_value": [
+        8
+      ],
+      "example_config_value": [
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    {
+      "parameter": "de_novo.column_counts",
+      "historical_value": [
+        24,
+        28,
+        32,
+        36
+      ],
+      "example_config_value": [
+        24,
+        26,
+        28,
+        30,
+        32,
+        34,
+        36
+      ]
+    },
+    {
+      "parameter": "solver.max_evaluations",
+      "historical_value": 1200,
+      "example_config_value": 3600
+    },
+    {
+      "parameter": "solver.population_size",
+      "historical_value": 24,
+      "example_config_value": 32
+    },
+    {
+      "parameter": "solver.local_refine_evaluations",
+      "historical_value": 64,
+      "example_config_value": 240
+    },
+    {
+      "parameter": "solver.max_workers",
+      "historical_value": 2,
+      "example_config_value": 1
+    },
+    {
+      "parameter": "solver.budget_policy",
+      "historical_value": "not_explicitly_recorded",
+      "example_config_value": "strict"
+    }
+  ],
+  "provenance": {
+    "metric_artifact": "归档清单.json",
+    "metric_artifact_sha256": "05698a4444074cb05534f56fc0e4cfedee96dab96110a67cffc4250ae88911bb",
+    "configuration_artifact": "配置快照.json",
+    "configuration_artifact_sha256": "0fc3d3d458d2947d839af1090418feb4e7fef7e449dde119253341d457cf9c92",
+    "initial_metric_artifact": "详细数据/起点密集复核.json",
+    "initial_metric_artifact_sha256": "136b2c81ed68f98c2174175fb22f76ee31d563a9d731c2a15850f86d72993817",
+    "solver_statistics_artifact": "详细数据/优化结果.json",
+    "solver_statistics_artifact_sha256": "15799b2ba7a3d7da0629e834330c4a593909520c319374fbe0a19bc9e70a04f8",
+    "initial_design_record": "seeds[id=synthesis_14]",
+    "optimized_design_record": "best[candidate_id=i01_r02_candidate_000317]"
+  },
+  "files": {
+    "optimized_design": "design.json",
+    "initial_design": "initial_design.json"
+  }
+}

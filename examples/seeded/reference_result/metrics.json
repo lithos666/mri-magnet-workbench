@@ -1,0 +1,169 @@
+{
+  "historical_reference": true,
+  "fresh_run": false,
+  "note": "真实历史结果摘录，用于说明 Seeded 工作方式；不是随附新版 config.json 的本次复现，不能据此保证相同运行结果。",
+  "run_id": "当前方案_20261030",
+  "mode": "seeded",
+  "target": {
+    "geometry": "disk",
+    "diameter_mm": 20.0,
+    "z_mm": 0.0,
+    "min_field_mT": 34.947527179406386,
+    "max_ppm": 47.03538977117143
+  },
+  "polarization_model": "remanence",
+  "magnet": {
+    "cube_mm": 12.0,
+    "remanence_T": 1.43,
+    "reference_mur": 1.05
+  },
+  "optimized_candidate_id": "t01_candidate_000031",
+  "optimized_canonical_physical_sha256": "9f390260b6d75e96a1f73362f658f2652e4963efa6e804beb1c0ffd86f8770dc",
+  "fem_verified": false,
+  "global_optimum_proven": false,
+  "metric_scope": "密集面积采样加二维内部/边界连续极值细化；局部极值搜索不构成全局极值证明。",
+  "comparison": {
+    "original": {
+      "label": "原始裸磁体",
+      "candidate_id": "baseline",
+      "mean_field_mT": 37.34430373727195,
+      "pp_norm_ppm": 38.56893119153879,
+      "magnet_count": 1736,
+      "ring_count": 62,
+      "layer_count": 14,
+      "pointset": "disk_D20_z0_A1024_C768_seed20261129",
+      "n_points": 1797,
+      "polarization_model": "remanence",
+      "integration_measure": "area",
+      "manufacturing_valid": false
+    },
+    "initial": {
+      "label": "PAVA可打印起点",
+      "candidate_id": "manufacturing_seed",
+      "mean_field_mT": 35.19619166489039,
+      "pp_norm_ppm": 41.65382305189074,
+      "magnet_count": 1624,
+      "ring_count": 58,
+      "layer_count": 14,
+      "pointset": "disk_D20_z0_A1024_C768_seed20261129",
+      "n_points": 1797,
+      "polarization_model": "remanence",
+      "integration_measure": "area",
+      "manufacturing_valid": true
+    },
+    "optimized": {
+      "label": "历史选中优化方案",
+      "candidate_id": "t01_candidate_000031",
+      "mean_field_mT": 35.15570502985797,
+      "pp_norm_ppm": 0.20870247933290761,
+      "magnet_count": 1624,
+      "ring_count": 58,
+      "layer_count": 14,
+      "pointset": "disk_D20_z0_A1024_C768_seed20261129",
+      "n_points": 1797,
+      "polarization_model": "remanence",
+      "integration_measure": "area",
+      "manufacturing_valid": true
+    }
+  },
+  "solver_search_highlights": {
+    "max_evaluations": 480,
+    "population_size": 32,
+    "local_refine_evaluations": 80,
+    "optimize_azimuth_count": true,
+    "optimize_radial_ring_count": true,
+    "azimuth_count_candidates": [
+      24,
+      28,
+      32,
+      36,
+      40
+    ],
+    "axial_shift_limit_mm": 12.0,
+    "topology_limit": 2,
+    "historical_warm_starts_enabled": true,
+    "seed": 20261028
+  },
+  "differences_vs_example_config": [
+    {
+      "parameter": "polarization_model",
+      "historical_value": "remanence",
+      "example_config_value": "isolated_cube_self_demag"
+    },
+    {
+      "parameter": "target.min_field_mT",
+      "historical_value": 34.947527179406386,
+      "example_config_value": 30.0
+    },
+    {
+      "parameter": "target.max_ppm",
+      "historical_value": 47.03538977117143,
+      "example_config_value": 1000.0
+    },
+    {
+      "parameter": "envelope.max_length_mm",
+      "historical_value": 506.0,
+      "example_config_value": 520.0
+    },
+    {
+      "parameter": "solver.max_evaluations",
+      "historical_value": 480,
+      "example_config_value": 2400
+    },
+    {
+      "parameter": "solver.local_refine_evaluations",
+      "historical_value": 80,
+      "example_config_value": 240
+    },
+    {
+      "parameter": "search.optimize_azimuth_count",
+      "historical_value": true,
+      "example_config_value": false
+    },
+    {
+      "parameter": "search.optimize_radial_ring_count",
+      "historical_value": true,
+      "example_config_value": false
+    },
+    {
+      "parameter": "search.axial_shift_limit_mm",
+      "historical_value": 12.0,
+      "example_config_value": 25.0
+    },
+    {
+      "parameter": "manufacturing.printer_bed_mm",
+      "historical_value": [
+        220.0,
+        220.0,
+        250.0
+      ],
+      "example_config_value": [
+        480.0,
+        480.0,
+        255.0
+      ]
+    },
+    {
+      "parameter": "warm_start_runs_enabled",
+      "historical_value": true,
+      "example_config_value": false
+    },
+    {
+      "parameter": "seed",
+      "historical_value": 20261028,
+      "example_config_value": 20261102
+    }
+  ],
+  "provenance": {
+    "metric_artifact": "详细数据/run_summary.json",
+    "metric_artifact_sha256": "2b88574bf7f7217722290978d819d7e65e1a4c781017454d700d02904a9d8e4d",
+    "configuration_artifact": "详细数据/run_config.json",
+    "configuration_artifact_sha256": "36a52d048646406a616e01bf7456560d431310c8890bfd1dfcec7346a3d4818d",
+    "initial_design_record": "candidates[candidate_id=manufacturing_seed]",
+    "optimized_design_record": "candidates[candidate_id=t01_candidate_000031]"
+  },
+  "files": {
+    "optimized_design": "design.json",
+    "initial_design": "initial_design.json"
+  }
+}
