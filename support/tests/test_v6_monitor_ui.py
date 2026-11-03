@@ -141,6 +141,10 @@ console.log(JSON.stringify(a.physicsSummary(state)));
         labels=self.js("console.log(JSON.stringify([a.candidateVerificationText({physics_status:{verification_binding_valid:true,fem_verified:true,model_accuracy_passed:false}}),a.candidateVerificationText({physics_status:{fem_verified:true,model_accuracy_passed:true}})]));")
         self.assertIn('已收敛',labels[0]);self.assertIn('精度未通过',labels[0])
         self.assertIn('待验证',labels[1])
+        runtime=self.js("console.log(JSON.stringify(a.physicsSummary({config:{solver:{max_evaluations:300}},job:{max_evaluations:300,evaluations:100,engine_statistics:{preparations:10,preparation_seconds:3600,engine_calls:10,field_seconds:0}}}).cost));")
+        self.assertIn('预计剩余优化 20.00 小时',runtime)
+        ended=self.js("console.log(JSON.stringify(a.physicsSummary({job:{status:'completed',max_evaluations:300,evaluations:298,engine_statistics:{preparations:10,preparation_seconds:3600,engine_calls:10,field_seconds:0}}}).cost));")
+        self.assertIn('求解已结束',ended);self.assertNotIn('预计剩余',ended)
 
     def test_physics_task_requests_require_explicit_click_and_real_design(self):
         for control in ('calibrate-physics','verify-fem'):

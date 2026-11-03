@@ -44,7 +44,11 @@
     const config=state.config||{},plan=state.solver_preflight?.physics||{},job=state.job||{},stage=job.physics_stage||{},stats=job.engine_statistics||{};
     const stages={coupling_matrix:'装配阵列耦合矩阵',coupling_linear_solve:'求解自洽磁化',sampling:'计算观察点磁场'};
     const progress=finite(stage.progress_percent)?' '+stage.progress_percent.toFixed(0)+'%':'';
-    const seconds=finite(plan.estimated_seconds)?'预计优化 '+(plan.estimated_seconds/3600).toFixed(2)+' 小时（按起点实测外推）':'预计时长：待起点实测';
+    const measured=stats.preparations>0&&stats.engine_calls>0&&finite(stats.preparation_seconds)&&finite(stats.field_seconds);
+    const remaining=Math.max(0,Number(job.max_evaluations??config.solver?.max_evaluations??0)-Number(job.evaluations??0));
+    const runtimeSeconds=measured?(stats.preparation_seconds/stats.preparations+stats.field_seconds/stats.engine_calls)*remaining:null;
+    const ended=['completed','cancelled','stopped_with_result','failed'].includes(job.status);
+    const seconds=ended?'本轮求解已结束（实际用时见账本）':measured&&remaining>0?'预计剩余优化 '+(runtimeSeconds/3600).toFixed(2)+' 小时（按运行中实测更新，复核另计）':finite(plan.estimated_seconds)?'预计优化 '+(plan.estimated_seconds/3600).toFixed(2)+' 小时（按起点实测外推）':'预计时长：待起点实测';
     const memory=finite(plan.estimated_parallel_working_bytes)?'并行工作数组约 '+(plan.estimated_parallel_working_bytes/1e6).toFixed(1)+' MB':'内存：待实际拓扑预检';
     const task=state.analysis_job||{},verification=state.physics_validation_progress||{};
     const detail=task.status==='running'&&task.kind?
