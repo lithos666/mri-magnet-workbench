@@ -36,13 +36,16 @@ class VerificationArchiveTests(unittest.TestCase):
         cfg=config();d=design()
         report={'job_id':'test','status':'passed','fem_verified':True,'model_accuracy_passed':True,
             'design_sha256':canonical_physical_sha256(d),'model_fingerprint':model_fingerprint(cfg),
-            'domain':cfg['target'],'physics':cfg['physics']}
+            'domain':cfg['target'],'physics':cfg['physics'],'design':d.to_dict()}
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);folder=root/'COMSOL验证'/'one';folder.mkdir(parents=True)
             save_json(root/'配置快照.json',cfg);save_json(folder/'fem_report.json',report)
             row=root/'候选方案'/'one';row.mkdir(parents=True)
             save_json(row/'设计.json',d.to_dict());save_json(row/'复核指标.json',{'dense':{'pp_norm_ppm':12.}})
-            save_json(root/'归档清单.json',{'candidates':[{'design':d.to_dict()}]})
+            candidate={'design':d.to_dict(),'candidate_id':'one','layout_file':'one.png'}
+            save_json(root/'归档清单.json',{'candidates':[candidate],'best':candidate,
+                'pareto_recommendations':[{'candidate_id':'one'}]})
+            (root/'方案对比.csv').write_text('布局图,Python模型精度,FEM复核\none.png,待标定,待验证\nother.png,待标定,待验证\n',encoding='utf-8-sig')
             (root/'本次运行速览.md').write_text('Original optimization summary',encoding='utf-8')
             (root/'报告.html').write_text('<header>Original</header>',encoding='utf-8')
             result=append_fem_evidence(root,report,folder/'fem_report.json')
@@ -54,6 +57,13 @@ class VerificationArchiveTests(unittest.TestCase):
             self.assertTrue(checked['fem_verified']);self.assertTrue(checked['physics_status']['model_accuracy_passed'])
             self.assertEqual(checked['dense']['pp_norm_ppm'],12.)
             self.assertTrue((root/result['fem_summary']).is_file())
+            manifest=json.loads((root/'归档清单.json').read_text(encoding='utf-8'))
+            self.assertTrue(manifest['fem_verified']);self.assertTrue(manifest['model_accuracy_passed'])
+            self.assertTrue(manifest['best']['physics_status']['fem_verified'])
+            self.assertTrue(manifest['pareto_recommendations'][0]['physics_status']['fem_verified'])
+            comparison=(root/'方案对比.csv').read_text(encoding='utf-8-sig')
+            self.assertIn('one.png,通过,已验证',comparison)
+            self.assertIn('other.png,待标定,待验证',comparison)
 
     def test_mismatched_design_does_not_change_candidate_certificate(self):
         cfg=config();d=design()
