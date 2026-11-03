@@ -25,6 +25,9 @@ WORKBENCH_CONFIG["target"] = {
 # 更改参数可在此写入，或在工作台表单/高级JSON中保存当前工程。
 # WORKBENCH_CONFIG["solver"]["max_evaluations"] = 1200
 # WORKBENCH_CONFIG["solver"]["max_workers"] = 2
+# V6正式优化默认阵列自洽互耦；旧工程保留自己的模型，切换后必须重新求场。
+# WORKBENCH_CONFIG["physics"].update(field_model="coupled", quadrature_order=2, cells_per_axis=1)
+# WORKBENCH_CONFIG["physics"].update(max_unknowns=1200, max_matrix_mb=128.0, prepared_cache_size=4)
 # WORKBENCH_CONFIG["search"]["optimize_azimuth_count"] = True
 # WORKBENCH_CONFIG["target"]["geometry"] = "disk"  # 保留2cm、z=0平面FOV能力。
 # 本轮完整工程参数独立保存在 工程案例_100mmDSV.json；不会覆盖旧工程。

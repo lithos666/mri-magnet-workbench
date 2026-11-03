@@ -136,10 +136,29 @@ class WorkbenchHTTPServer(ThreadingHTTPServer):
             self.analysis_future=self.analysis_executor.submit(self._execute_analysis,analyzer,body)
             return deepcopy(self.analysis_job)
 
+    def start_physics_verification(self,kind,body):
+        method=getattr(self.workbench,'calibrate' if kind=='calibrate' else 'verify_fem',None)
+        if not callable(method):raise NotImplementedError('后端尚未实现精度验证')
+        allowed={'design','fem_report','apply'} if kind=='calibrate' else {'design','settings'}
+        if set(body)-allowed:raise ValueError('未知验证请求字段')
+        if body.get('design') is not None and not isinstance(body['design'],dict):raise ValueError('design必须为对象')
+        if kind=='calibrate' and not isinstance(body.get('apply',False),bool):raise ValueError('apply必须为布尔值')
+        with self.job_lock:
+            if any(f is not None and not f.done() for f in (self.current_future,self.export_future,self.analysis_future)):
+                raise RuntimeError('已有求解、导出或工程分析正在运行')
+            self.analysis_job={'status':'running','kind':kind,'started_at':datetime.now(timezone.utc).isoformat()}
+            self.analysis_future=self.analysis_executor.submit(self._execute_analysis,method,body)
+            return deepcopy(self.analysis_job)
+
     def _execute_analysis(self, analyzer, body):
         try:result=analyzer(**body)
-        except Exception as error:
-            with self.job_lock:self.analysis_job.update(status='failed',error=str(error))
+        except BaseException as error:
+            from .workbench import CancelledError
+            from .optimization import _GracefulStop
+            if not isinstance(error,(CancelledError,_GracefulStop)):
+                with self.job_lock:self.analysis_job.update(status='failed',error=str(error))
+            else:
+                with self.job_lock:self.analysis_job.update(status='cancelled',error=str(error))
         else:
             with self.job_lock:self.analysis_job.update(status='completed',design_sha256=result.get('design_sha256'))
         finally:
@@ -346,6 +365,10 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
                     return
                 elif route == '/api/analysis':
                     analysis_job=self.server.start_analysis(body)
+                    self._json({'analysis_job':analysis_job},202)
+                    return
+                elif route in ('/api/verify-fem','/api/calibrate'):
+                    analysis_job=self.server.start_physics_verification(route.rsplit('/',1)[1],body)
                     self._json({'analysis_job':analysis_job},202)
                     return
                 elif route.startswith("/api/step/"):

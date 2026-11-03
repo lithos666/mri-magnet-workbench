@@ -9,7 +9,7 @@ from .serialization import jsonable
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description='MRI 六步仿真工作台（旧 check/all/optimize 命令保持兼容）')
-    parser.add_argument('action',choices=['serve','init','status','preflight','solver-preflight','apply-budget-suggestion','preset','step','select','all','analyze'])
+    parser.add_argument('action',choices=['serve','init','status','preflight','solver-preflight','apply-budget-suggestion','preset','step','select','all','analyze','calibrate','verify-fem'])
     parser.add_argument('number',nargs='?',type=int,help='step 的步骤号1～6')
     parser.add_argument('--project',default='results/工作台工程',help='独立工程目录，保存配置、状态和每次运行')
     parser.add_argument('--config',help='工作台 JSON 配置；不使用旧 CONFIG 的平面域隐式值')
@@ -22,6 +22,8 @@ def main(argv=None):
     parser.add_argument('--design',help='analyze使用的设计JSON；默认使用当前最优或选中起点')
     parser.add_argument('--mutual-demag',action='store_true',help='按需分析均匀磁块互退磁；不覆盖优化验收指标')
     parser.add_argument('--tolerance',action='store_true',help='按需运行第一阶公差统计估计')
+    parser.add_argument('--fem-report',help='calibrate使用的已完成且收敛的FEM报告JSON')
+    parser.add_argument('--apply-calibration',action='store_true',help='标定通过后采用该精度并使旧运行失效')
     args=parser.parse_args(argv)
     root=Path(__file__).resolve().parents[1]
     project=Path(args.project);project=project if project.is_absolute() else root/project
@@ -35,9 +37,15 @@ def main(argv=None):
         save_json(project/'工作台配置.json',wb.config)
         result={'project':str(project),'config':str(project/'工作台配置.json'),'next':'workbench step 1 --project ...'}
     elif args.action=='status':result=wb.state()
+    elif args.action in ('verify-fem','calibrate'):
+        design=json.loads(Path(args.design).read_text(encoding='utf-8-sig')) if args.design else None
+        result=(wb.verify_fem(design=design) if args.action=='verify-fem' else
+            wb.calibrate(design=design,fem_report=args.fem_report,apply=args.apply_calibration))
     elif args.action=='analyze':
         design=json.loads(Path(args.design).read_text(encoding='utf-8-sig')) if args.design else None
-        result=wb.analyze(design=design,analysis_options={'mutual_demag':args.mutual_demag,'tolerance':args.tolerance})
+        options={'tolerance':args.tolerance}
+        if args.mutual_demag:options['mutual_demag']=True
+        result=wb.analyze(design=design,analysis_options=options)
     elif args.action=='preflight':result=wb.preflight()
     elif args.action=='solver-preflight':result=wb.solver_preflight()
     elif args.action=='apply-budget-suggestion':result=wb.apply_budget_suggestion()

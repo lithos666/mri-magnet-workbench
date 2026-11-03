@@ -129,14 +129,31 @@ class ManufacturingChecker:
 
 @dataclass
 class FieldEvaluator:
+    emit_evaluation_progress = True
     config: dict
     sample: dict
     cancel_file: str = ''
     graceful_stop: bool = False
     engine: object = field(default=None, init=False, repr=False)
+    status_callback: object = field(default=None, init=False, repr=False)
+
+    @property
+    def evaluation_fingerprint(self):
+        from .field_models import evaluation_fingerprint
+        return evaluation_fingerprint(self.config,self.sample)
+
+    def _check_stop(self):
+        if self.cancel_file and Path(self.cancel_file).exists():
+            if self.graceful_stop:
+                from .optimization import _GracefulStop
+                raise _GracefulStop()
+            raise CancelledError('用户停止运行')
+
+    def _physics_status(self, status):
+        if self.status_callback:self.status_callback(status)
 
     def __getstate__(self):
-        state = dict(self.__dict__); state['engine'] = None
+        state = dict(self.__dict__); state['engine'] = None;state['status_callback']=None
         return state
 
     def __call__(self, design):
@@ -144,10 +161,13 @@ class FieldEvaluator:
 
     def evaluate_with_field(self, design):
         if not self.graceful_stop and self.cancel_file and Path(self.cancel_file).exists(): raise CancelledError('用户停止运行')
-        from .field import FieldEngine
+        from .field_models import make_field_engine,model_fingerprint
         from .metrics import evaluate_design
-        if self.engine is None: self.engine = FieldEngine(self.config['chunk_points'], self.config['polarization_model'])
-        return evaluate_design(design, self.engine, self.sample, self.config['density_kg_m3'])
+        if self.engine is None:self.engine=make_field_engine(self.config,cancel_check=self._check_stop,status_callback=self._physics_status)
+        metrics,values=evaluate_design(design,self.engine,self.sample,self.config['density_kg_m3'])
+        metrics.update(field_model=self.engine.polarization_model,model_fingerprint=model_fingerprint(self.config),
+                       evaluation_fingerprint=self.evaluation_fingerprint)
+        return metrics,values
 
     def field_values(self,design):return self.evaluate_with_field(design)[1]
 
@@ -159,6 +179,7 @@ class Workbench:
         if self.state_path.exists():
             self.data = json.loads(self.state_path.read_text(encoding='utf-8-sig'))
             self.data['config']=canonicalize_config(self.data['config'],validate=False)
+            self.data['physics_mode_label']='V6 阵列互耦' if self.data['config']['physics']['field_model']=='coupled' else '旧模型结果 / 可复现模式'
         else:
             defaults=default_config()
             parameters=Path(__file__).resolve().parents[1]/'parameters.py'
@@ -230,6 +251,89 @@ class Workbench:
             path=path.resolve();path.relative_to(self.root)
             return path if path.is_file() else None
         except (ValueError,OSError):return None
+
+    def _verification_design(self,design=None):
+        if design is None:
+            row=self.data.get('best') or self.data.get('current_best')
+            if not row:
+                rows=self._selected();row=rows[0] if rows else None
+            design=row.get('design') if row else None
+        if not self._valid_view_design(design) or not design.get('rings') or design.get('preview_only'):
+            raise ValueError('请先选择真实磁体方案')
+        value=Design.from_dict(design)
+        if len(value.rings)>400 or value.magnet_count>10000:raise ValueError('验证上限为400环、10000块')
+        if not validate_design(value,envelope_for(self.config))['valid']:raise ValueError('待验证几何不满足当前包络')
+        if any(not math.isclose(float(getattr(value,k)),float(self.config['magnet'][k]),rel_tol=1e-10,abs_tol=1e-10)
+               for k in ('cube_mm','remanence_T','reference_mur')):raise ValueError('验证材料与工程输入不一致')
+        return value
+
+    def verify_fem(self,design=None,settings=None):
+        from .comsol_validation import prepare_fem_validation,run_fem_validation
+        from .field_models import make_field_engine,model_fingerprint
+        value=self._verification_design(design);cfg=deepcopy(self.config)
+        sample=make_sample(cfg,dense=True);self.cancel_file.unlink(missing_ok=True)
+        folder=self._run_root()/'COMSOL验证'/datetime.now(timezone(timedelta(hours=8))).strftime('%Y%m%d_%H%M%S_%f')
+        engine=make_field_engine(cfg,cancel_check=self._check_cancel)
+        fields=engine.field(value,sample['points_mm'])
+        job=prepare_fem_validation(value,sample,folder,cfg['comsol_root'],
+            settings=merge_config(cfg.get('fem_validation',{}),settings or {}))
+        def status(event):
+            with self._lock:self.data['physics_validation_progress']=event
+        report=run_fem_validation(job,predicted_fields=fields,event_callback=status,cancel_check=self._check_cancel)
+        report.update(design_sha256=canonical_physical_sha256(value),design=value.to_dict(),
+            model_fingerprint=model_fingerprint(cfg),physics=deepcopy(cfg['physics']),domain=deepcopy(cfg['target']))
+        report['fem_metrics']=report.get('comparison',{}).get('fem_metrics')
+        save_json(folder/'fem_report.json',report)
+        report['artifacts']={'report':self._relative(folder/'fem_report.json')}
+        with self._lock:
+            if self.config!=cfg:raise ValueError('验证期间工程配置已改变；报告保留在独立目录，不更新当前工程状态')
+            from .verification_archive import append_fem_evidence
+            evidence=append_fem_evidence(self._run_root(),report,folder/'fem_report.json')
+            self.data.setdefault('artifacts',{}).update({key:self._relative(self._run_root()/p) for key,p in evidence.items()})
+            self.data['physics_validation']=report
+            self._bind_fem_to_candidates(report)
+            self._save()
+        return report
+
+    def _bind_fem_to_candidates(self,report):
+        """Only the matching physical design receives this model/domain certificate."""
+        from .workbench_archive import physics_status
+        rows=[self.data.get(name) for name in ('best','current_best')]
+        for name in ('pareto_recommendations','candidates'):
+            rows.extend(self.data.get(name) or [])
+        for row in rows:
+            if not isinstance(row,dict):continue
+            design=row.get('design')
+            if not design and row.get('folder'):
+                path=self._project_file(str(Path(row['folder'])/'设计.json'))
+                if path is not None:design=self._view_json(path)
+            if not design:continue
+            try:matches=canonical_physical_sha256(design)==report.get('design_sha256')
+            except (KeyError,TypeError,ValueError):matches=False
+            if not matches:continue
+            row['physics_validation']=deepcopy(report)
+            status=physics_status(dict(row,design=design),self.config)
+            row['physics_status']=status
+            row['comsol_fem_verified']=status['fem_verified']
+            if row is self.data.get('best') and status['verification_binding_valid']:
+                fem='FEM网格与外空气域已收敛' if status['fem_verified'] else 'FEM尚未完成收敛验收'
+                accuracy='Python模型精度通过' if status['model_accuracy_passed'] else '当前优化档位的Python模型精度未通过'
+                self.data['steps'][5]['message']='复核与归档完成；'+fem+'；'+accuracy
+
+    def calibrate(self,design=None,fem_report=None,apply=False):
+        from .physics_calibration import calibrate_design
+        value=self._verification_design(design);cfg=deepcopy(self.config);sample=make_sample(cfg,dense=True)
+        self.cancel_file.unlink(missing_ok=True)
+        folder=self._run_root()/'精度标定'/datetime.now(timezone(timedelta(hours=8))).strftime('%Y%m%d_%H%M%S_%f')
+        def status(event):
+            with self._lock:self.data['physics_validation_progress']=event
+        report=calibrate_design(value,cfg,sample,folder,fem_report=fem_report,
+            event_callback=status,cancel_check=self._check_cancel)
+        if self.config!=cfg:raise ValueError('标定期间工程配置已改变；结果仅保存在独立目录')
+        report['domain']=deepcopy(cfg['target'])
+        if apply and report.get('selected_physics'):self.update_config({'physics':report['selected_physics']})
+        report['artifacts']={'report':self._relative(folder/'精度标定.json')}
+        self.data['physics_calibration']=report;self._save();return report
 
     def _view_json(self, path):
         """Read-only view cache, invalidated by file replacement or modification."""
@@ -400,6 +504,11 @@ class Workbench:
                 self.config['manufacturing'],envelope_for(self.config),self.config['search'],
                 solver_settings_for(self.config,self.cancel_file),requirements_for(self.config))
             for row,seed in zip(result.get('per_island',[]),selected):row['name']=seed.get('style',seed['id'])
+            from .physics_workflow import physics_preflight
+            result['physics']=physics_preflight(self.config,selected,result)
+            if not result['physics']['valid']:
+                result['valid']=False;result['status']='error'
+                result['violations'].extend(result['physics']['violations'])
         self.data['solver_preflight']=result;self._save();return result
 
     def apply_budget_suggestion(self):
@@ -431,6 +540,7 @@ class Workbench:
         self.data.pop('best',None);self.data.pop('current_best',None)
         self.data.pop('pareto_recommendations',None)
         self.data.pop('analysis',None)
+        self.data.pop('physics_validation',None);self.data.pop('physics_calibration',None)
         if first<=2:self.data.pop('preflight',None)
         if first<=5:
             for key in ('solver_preflight','evolution','optimization_metadata','island_statuses'):self.data.pop(key,None)
@@ -440,13 +550,21 @@ class Workbench:
         updated = canonicalize_config(config,base=self.config,validate=False)
         if updated != self.config:
             changed={key for key in updated if updated.get(key)!=self.config.get(key)}
-            if changed=={'analysis'}:
-                self.data['config']=updated;self.data.pop('analysis',None)
+            if changed and changed<={'deliverables','comsol_root','fem_validation','analysis'}:
+                self.data['config']=updated
+                if changed & {'deliverables','comsol_root'}:
+                    self.data['steps'][5].update(status='pending',message='导出设置已修改；优化与密集指标保留，请重新交付')
+                if 'fem_validation' in changed:
+                    self.data.pop('physics_validation',None);self.data.pop('physics_calibration',None)
+                    for name in ('best','current_best'):
+                        if self.data.get(name):
+                            self.data[name].pop('physics_validation',None);self.data[name]['comsol_fem_verified']=False
+                if 'analysis' in changed:self.data.pop('analysis',None)
                 self._save();return self.state()
             first=6
             if changed & {'mode','source_geometry','target'}: first=1
             elif changed & {'envelope','magnet','manufacturing'}: first=2
-            elif changed & {'de_novo','search','density_kg_m3','polarization_model','chunk_points','seed'}: first=3
+            elif changed & {'de_novo','search','density_kg_m3','polarization_model','chunk_points','seed','physics'}: first=3
             elif 'sampling' in changed: first=4
             elif changed & {'solver','evolution','scoring'}: first=5
             self.data['config'] = updated
@@ -633,6 +751,17 @@ class Workbench:
             render_rz_layout(source,root/'原始排布_RZ.png',title='源排布（投影前）')
             save_json(root/'详细数据'/'源槽投影对照.json', audit)
         if not seeds: raise ValueError('未找到通过制造审查的种子；请查看正向合成诊断或放宽指标/包络')
+        if cfg.get('physics',{}).get('field_model')=='coupled':
+            from .field_models import make_field_engine
+            from .physics_workflow import evaluate_candidates
+            official=make_field_engine(cfg,cancel_check=self._check_cancel)
+            proposals=result.get('candidate_pool',seeds) if cfg['mode']=='de_novo' else seeds
+            seeds,evaluated=evaluate_candidates(proposals,cfg,sample,requirements_for(cfg),official,
+                limit=int(cfg['de_novo']['seed_count']) if cfg['mode']=='de_novo' else None,cancel_check=self._check_cancel)
+            self.data['synthesis_metadata'].update(official_ranking_model='coupled',
+                coupled_candidate_count=len(evaluated),selected_seed_ids=[r['id'] for r in seeds])
+            save_json(root/'详细数据'/'互耦拓扑筛选.json',evaluated)
+            if not seeds:raise ValueError('所有拓扑提案的互耦求场均失败；请查看互耦拓扑筛选.json中的资源或数值诊断')
         for row in seeds:
             self._check_cancel(); design = Design.from_dict(row['design'])
             checked = audit_manufacturing(design,cfg['manufacturing'],envelope_for(cfg))
@@ -662,10 +791,19 @@ class Workbench:
         designs = [Design.from_dict(s['design']) for s in selected]
         training = make_sample(self.config,designs=designs); validation = make_sample(self.config,dense=True)
         root = self._run_root(); save_json(root/'详细数据'/'训练采样.json',training);save_json(root/'详细数据'/'复核采样.json',validation)
-        engine = FieldEngine(self.config['chunk_points'],self.config['polarization_model'])
+        from .field_models import make_field_engine,model_fingerprint,evaluation_fingerprint
+        engine = make_field_engine(self.config,cancel_check=self._check_cancel)
         for row, design in zip(selected,designs):
+            started=time.perf_counter();statistics_before=dict(engine.statistics)
             row['training_metrics'] = evaluate_design(design,engine,training,self.config['density_kg_m3'])[0]
+            row['training_metrics'].update(field_model=engine.polarization_model,
+                model_fingerprint=model_fingerprint(self.config),evaluation_fingerprint=evaluation_fingerprint(self.config,training))
+            row['physics_cost']={'elapsed_seconds':time.perf_counter()-started,
+                'engine_statistics':{k:v-statistics_before.get(k,0) for k,v in engine.statistics.items() if isinstance(v,(int,float))}}
         self.data['sampling'] = {'training_count':len(training['points_mm']),'validation_count':len(validation['points_mm']), 'symmetry':training['workbench_symmetry'], 'geometry':self.config['target']['geometry']}
+        self.data['sampling'].update(field_model=engine.polarization_model,physics=deepcopy(self.config.get('physics',{})),
+            engine_statistics=deepcopy(engine.statistics))
+        self.solver_preflight()
         path = root/'采样点分布.png';plot_samples(training,validation,path)
         return {'message':'训练%d点 / 独立复核%d点；%s'%(len(training['points_mm']),len(validation['points_mm']),'共同对称基本域已验证' if training['workbench_symmetry']['used'] else '使用全域采样'),'preview':self._relative(path),**self.data['sampling']}
 
@@ -693,6 +831,8 @@ class Workbench:
         def event_callback(event):
             count=int(event.get('global_evaluations',0));index=event.get('topology_index')
             with self._lock:
+                if event.get('physics_stage'):self.data['job']['physics_stage']=event['physics_stage']
+                if event.get('engine_statistics'):self.data['job']['engine_statistics']=event['engine_statistics']
                 if isinstance(index,int) and 1<=index<=len(selected):
                     island=self.data['island_statuses'][index-1]
                     island.update(round=event.get('island_round',island.get('round',1)),
@@ -703,13 +843,13 @@ class Workbench:
                     if event.get('allocation') is not None:island['allocation']=event['allocation']
                     if event.get('metrics'):
                         island.update(best_mean_mT=event['metrics']['mean_norm_T']*1000,best_ppm=event['metrics']['pp_norm_ppm'])
-                self.data['job'].update(evaluations=count,stage=event.get('stage_name',event.get('phase','')),topology_index=index,
+                self.data['job'].update(evaluations=count,stage=event.get('stage_name',event.get('phase',self.data['job'].get('stage',''))),topology_index=index,
                     progress_percent=min(100.,100*count/solver['max_evaluations']),max_evaluations=solver['max_evaluations'],
                     topology_name=selected[index-1]['style'] if isinstance(index,int) and 1<=index<=len(selected) else '拓扑岛')
                 if event.get('design') and event.get('metrics'):
                     best=self.data.get('current_best')
                     if best is None or feasibility_score(event['metrics'],requirements)<feasibility_score(best['metrics'],requirements):
-                        self.data['current_best']=deepcopy(event)
+                        self.data['current_best']=deepcopy({k:v for k,v in event.items() if k!='prepared_response'})
                     best=self.data['current_best']
                     self.data['job'].update(best_mean_mT=best['metrics']['mean_norm_T']*1000,best_ppm=best['metrics']['pp_norm_ppm'],
                         metric_scope='training',best_pointset=best['metrics'].get('pointset'))
@@ -730,7 +870,7 @@ class Workbench:
             if best: monitor(dict(best,event='final',global_evaluations=result['metadata']['field_evaluations']))
             used=result['metadata']['field_evaluations']
             self.data['job'].update(evaluations=used,progress_percent=min(100.,100*used/solver['max_evaluations']),
-                status=result.get('state','complete'))
+                status=result.get('state','complete'),physics_stage={'stage':'completed','progress_percent':100.})
             if best:
                 self.data['current_best']=deepcopy(best)
                 self.data['job'].update(best_mean_mT=best['metrics']['mean_norm_T']*1000,best_ppm=best['metrics']['pp_norm_ppm'])
@@ -815,14 +955,18 @@ class Workbench:
             if group: add(group[0])
         for row in ordered: add(row)
         if not chosen: raise ValueError('没有有限求场结果可复核')
-        engine = FieldEngine(cfg['chunk_points'],cfg['polarization_model'])
+        from .field_models import make_field_engine,model_fingerprint,evaluation_fingerprint
+        engine = make_field_engine(cfg,cancel_check=self._check_cancel)
         sample = make_sample(cfg,dense=True); starts = cfg['sampling']['refine_starts']
+        legacy_engine=FieldEngine(cfg['chunk_points'],cfg['polarization_model'])
         seeds = deepcopy(self._selected())
         for seed in seeds:
             self._check_cancel(); design = Design.from_dict(seed['design'])
             m,b = evaluate_design(design,engine,sample,cfg['density_kg_m3'])
             refine = refine_sphere_extrema if cfg['target']['geometry']=='sphere' else refine_disk_extrema
             seed['dense_metrics'] = refine(design,engine,sample,m,b,starts=starts)
+            seed['dense_metrics'].update(field_model=engine.polarization_model,model_fingerprint=model_fingerprint(cfg),
+                evaluation_fingerprint=evaluation_fingerprint(cfg,sample))
             seed['validation_metrics'] = seed['dense_metrics']
         validated=[]; checker = ManufacturingChecker(cfg['manufacturing'],envelope_for(cfg))
         for index, row in enumerate(chosen):
@@ -832,6 +976,12 @@ class Workbench:
             metrics,B = evaluate_design(design,engine,sample,cfg['density_kg_m3'])
             refine = refine_sphere_extrema if cfg['target']['geometry']=='sphere' else refine_disk_extrema
             metrics = refine(design,engine,sample,metrics,B,starts=starts)
+            metrics.update(field_model=engine.polarization_model,model_fingerprint=model_fingerprint(cfg),
+                evaluation_fingerprint=evaluation_fingerprint(cfg,sample))
+            legacy_metrics=evaluate_design(design,legacy_engine,sample,cfg['density_kg_m3'])[0]
+            current['physics_validation']={'model_accuracy_passed':False,'fem_verified':False,
+                'status':'awaiting_fem','legacy_metrics':legacy_metrics,'physics':deepcopy(cfg.get('physics',{})),
+                'field_model':engine.polarization_model,'model_fingerprint':model_fingerprint(cfg)}
             refinement = metrics.get('extrema_refinement',{})
             current.update(training_metrics=current['metrics'],metrics=metrics,performance_check=check_performance(metrics,req),audit=audit,refinement=refinement)
             train_pass=check_performance(current['training_metrics'],req)['valid']; dense_pass=current['performance_check']['valid']

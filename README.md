@@ -1,12 +1,12 @@
 # MRI Magnet Workbench · MRI 磁体优化工作台
 
-面向永磁 MRI 磁体的本地六步仿真工作台：用 Magpylib 快速求场，检查制造约束，搜索磁环排布，并导出 COMSOL 验证模型。当前界面为 **v5**，支持离线三维交互、二维尺寸图、瞬态演化、预算预检与可读性结果归档。
+面向永磁 MRI 磁体的本地六步仿真工作台：用 Magpylib 求场，检查制造约束，搜索磁环排布，并导出 COMSOL 验证模型。**V6 新增阵列自洽互耦优化**，同时保留离线三维交互、二维尺寸图、瞬态演化、预算预检与可读性结果归档。详见 [V6 操作说明](V6_阵列互耦操作说明.md)。
 
-![MRI 磁体优化工作台 v5](docs/images/workbench.png)
+![MRI 磁体优化工作台：实际V6工程](docs/images/workbench-v6.png)
 
-*界面实拍。图中为打开工程时自动显示的初步磁体示意，尚未合成或求场，不代表已优化结果。红蓝两半表示 N/S 极。*
+*实际V6工程结果：3456块磁铁的耦合优化与交付工作台。FEM收敛与Python模型精度分别显示；该单单元档位的PPM精度尚未通过，不把求解完成当作模型精度合格。*
 
-当前还提供按需工程分析：均匀磁块互退磁近似复核、Bz 球谐谱与 Z6/Z8 诊断、逐块剩磁与打印扇区定位公差统计，以及三维正交场切片。它们独立归档，不覆盖优化验收指标；模型范围和操作方法见 [升级建议核查与定向修改](升级建议核查与定向修改.md)。
+V6的正式求场在每次几何变更后重新求解阵列自洽磁化。Bz球谐谱与Z6/Z8诊断、制造公差统计及三维正交切片保留为独立工程分析；默认跟随当前运行模型，另选模型时明确标为对照。
 
 ## 快速开始
 
@@ -31,7 +31,7 @@ python py_main.py workbench serve
 
 读取仓库内附带的真实排布，先进行源槽保留组合评估与 PAVA 最小改动投影，再优化磁环半径和镜像层位置。
 
-下面展示一组**已完成的历史演进优化结果**：评价区域为 **z = 0、直径 20 mm 的圆形 FOV**，采用 `remanence` 磁化模型。
+下面展示一组**V5历史演进优化结果（旧固定源模型）**：评价区域为 **z = 0、直径 20 mm 的圆形 FOV**，采用 `remanence` 磁化模型。
 
 | 排布 | 平均场强 / mT | 峰峰值 / ppm | 磁铁块数 |
 | --- | ---: | ---: | ---: |
@@ -68,48 +68,67 @@ python py_main.py workbench serve --project results/seeded --config examples/see
 
 配置和详细操作见 [examples/seeded](examples/seeded/README.md)。磁铁允许同列紧贴，仍禁止重叠，并保留槽端、内外壁和周向工艺余量。
 
-## 案例 2：基于需求进行广泛搜索
+## 案例 2：根据需求从零搜索 · V6 阵列互耦
 
-**不读取已有排布文件**。根据指标、包络、材料和打印约束建立磁环基底与灵敏度矩阵，生成多个拓扑起点，再通过多岛筛选把预算集中到更有潜力的方案。
+**不读取已有磁铁排布文件**。独立环线性基底提出不同拓扑；整阵列互耦决定起点排序、多岛晋级、DE、成对补偿与 LP 精修，以及最终密集复核。
 
-下面是**从零合成、固定 16 层的历史工程运行结果**，评价区域为直径 **100 mm 的球形 DSV**，采用 `isolated_cube_self_demag` 模型。所示方案为均衡推荐解。
+真实工程采用 **100 mm 球形 DSV、16 层、12 mm N52、Br=1.43 T、μr=1.05**，平均场硬门槛为40 mT；通过门槛后均衡优化场强与不均匀度。
 
-| 排布 | 体积平均场强 / mT | 峰峰值 / ppm | 磁铁块数 |
+| 方案（同一耦合密集口径） | 体积平均场强 / mT | 峰峰值 / ppm | 磁铁块数 |
 | --- | ---: | ---: | ---: |
-| 对应合成起点 | 46.165733 | 650.883421 | 3248 |
-| 优化后均衡推荐 | **48.078167** | **143.672773** | **3248** |
+| 旧固定源优化方案，改用耦合重评 | 50.779530 | 639.568051 | 3456 |
+| V6 均衡推荐 | 52.266602 | 128.236185 | 3456 |
+| V6 高场强 | 60.921059 | 133041.256433 | 3456 |
+| V6 最低 ppm | 44.636291 | 107.054972 | 3248 |
 
-![案例二：基于需求从零合成的磁体布局](docs/images/de-novo-optimized.png)
+![V6 从零合成：均衡推荐磁体布局](docs/images/de-novo-v6-optimized.png)
 
-相对同一拓扑起点，平均场提高 **1.912434 mT**，ppm 下降 **77.926%**。起点与最终值均采用相同的密集复核点集；结果未经过 COMSOL FEM 求解验证。对应设计与指标见 [历史结果数据](examples/de_novo/reference_result/metrics.json)。
+相对旧算法方案在同一耦合模型下的结果，V6均衡推荐场强提高 **2.928%**，ppm下降 **79.950%**。两者均采用4103点体积加权密集复核与连续极值细化；旧固定源模型给出的126.917 ppm不能直接与本表的耦合指标比较。
 
-**实际求解的演化过程：**
+![V6 多岛、坐标/成对补偿与LP精修演化](docs/images/de-novo-v6-evolution.gif)
 
-![案例二：多岛优化与精修演化动画](docs/images/de-novo-evolution.gif)
+完整材料与三类设计见 [V6精简结果](examples/de_novo/v6_reference_result/metrics.json)，三档网格、外空气域检查及误差见 [FEM对照记录](examples/de_novo/v6_reference_result/fem_summary.json)。
 
-图示历史运行采用固定 8 对层、1200 次优化预算；下方示例已扩展为 5～8 对层与更广的列数搜索，并提高预算，因此不保证生成同一排布或同一指标。
+**两套均衡方案的实际COMSOL对照：**使用相同4103个采样点、体积权重与原始Br/μr；分别通过三级网格和扩大外空气域的收敛检查。以下为FEM采样极值口径，独立于上表的Python连续极值细化。
 
-**可运行的广泛搜索配置：**
+| 实际收敛FEM | 体积平均场强 / mT | 采样峰峰值 / ppm |
+| --- | ---: | ---: |
+| 旧模型优化的均衡方案 | 50.782305 | 600.405076 |
+| V6互耦优化的均衡方案 | 52.267520 | 174.169998 |
 
-| 项目 | 配置 |
+实际FEM对照中，V6方案场强提高 **2.925%**，采样PPM下降 **70.991%**。这确认了所示几何的实际改善；原Python单单元档位的精度误差仍须单独审查。
+
+**FEM网格与外域检查已收敛，但当前Python离散档位尚未通过模型精度门槛。** 保留耦合优化成绩与误差记录，不能把这组结果标为工程精度合格；需按操作说明提高积分或空间离散并开启新运行。
+
+**同一几何的独立精度标定：每块细分2×2×2单元、8点积分后通过本次FEM精度门槛。** 这档精度没有用于上表已归档的优化，不能把其合格状态转移给原单单元优化指标。
+
+| 同一均衡几何的计算档位 | 平均场强 / mT | 采样峰峰值 / ppm | 精度状态 |
+| --- | ---: | ---: | --- |
+| 原单单元、8点积分 | 52.266602 | 128.236070 | 未通过 |
+| 每块8子单元、各8点积分 | 52.263748 | 158.060056 | 独立标定通过 |
+| 收敛COMSOL FEM | 52.267520 | 174.169998 | 网格与外域收敛 |
+
+高精度档PPM误差为16.109942，低于本次门槛17.417000 ppm。详见 [独立精度标定](examples/de_novo/v6_reference_result/calibration_summary.json)。已开启独立300次高精度校正运行，尚未完成，不属于上表已归档成绩。
+
+| 约束与计算项 | 本次工程设置 |
 | --- | --- |
-| 评价域 | **原点处直径 100 mm 的球形 DSV** |
-| 性能与评价 | 体积加权平均场强 ≥ 40 mT，通过门槛后均衡优化场强和峰峰值 ppm |
-| 几何 | 保护内孔直径 200 mm，外径 ≤ 440 mm，总长 ≤ 500 mm，磁块内侧底面半径 ≥ 110 mm |
-| 磁块 | 12 × 12 × 12 mm，Br = 1.43 T，μr = 1.05，最多 4608 块 |
-| 拓扑范围 | 5～8 对镜像层、24～36 偶数列；径向环数按有效净空自动推算 |
-| 工艺 | 径向通槽，周向隔墙 1.6 mm，外壁 2.4 mm，底板 5 mm；四分块拼装 |
-| 初筛与预算 | 候选池 20，最多保留 5 个起点；3600 次优化求场，种群 32，坐标/成对精修 240 次，LP 精修 300 次 |
+| 结构包络 | 内孔直径200 mm；磁块内侧底面≥110 mm；外径≤440 mm；总长≤500 mm |
+| 拓扑 | 固定8对镜像层；每环24～36偶数块；径向环数由制造有效净空自动推算，最多8环 |
+| 工艺 | 径向通槽；周向隔墙1.6 mm；内外壁2.4 mm；底板5 mm；层间净空2 mm；中心两层磁块间隙≥10 mm |
+| 打印 | 单机255×255×255 mm，四分块；有效拼装包络480×480×255 mm |
+| 正式求场 | 原始Br=1.43 T，μr=1.05；整阵列线性回复自洽；每块1单元、8点体积积分 |
+| 评估预算 | 上限2400次，实际计费2290次；种群32、坐标/成对240次、LP240次、单进程 |
+| 初始随机种子 | 20261101 |
+
+本次工程运行在中断后保留已完成候选及预算，并从物理精英重启后续阶段，**不是随机数状态精确重放**。仓库配置用于相同工程约束的新运行，不保证逐点重现这组指标。有限预算内最佳方案未被证明为全局最优。
 
 ```powershell
-python py_main.py workbench serve --project results/de_novo --config examples/de_novo/config.json
+python py_main.py workbench serve --project results/de_novo_v6 --config examples/de_novo/v6_config.json
 ```
 
-Step 3 选择进入深度优化的候选，Step 5 启动前查看各岛实际维数、可完成轮数和预算截断提示。Step 6 对比密集复核后的均衡推荐、高场强与最低 ppm 方案。
+Step 3选择拓扑簇，Step 4检查物理模型、采样和成本，Step 5查看各岛真实维数及可完成精修轮数，Step 6对比三类推荐。需要搜索5～8对层时，可改 `de_novo.pair_counts` 为 `[5,6,7,8]`，并相应增加预算。详见 [案例操作](examples/de_novo/README.md)。
 
-配置和详细操作见 [examples/de_novo](examples/de_novo/README.md)。若只允许 16 层，把 `de_novo.pair_counts` 改成 `[8]`；界面顶部的 **100 mm DSV · 16 层工程预设**也可加载这组固定层数约束。案例默认未设置硬 ppm 上限，搜索得到的指标以实际运行和复核为准。
-
-**两案例的评价区域不同，ppm 不能直接横向比较。** 搜索是有限预算的工程优化，不保证全局最优。
+**案例1是20 mm平面FOV，案例2是100 mm球形DSV，ppm不能跨案例直接横向比较。**
 
 ## 命令行与参数修改
 
@@ -117,16 +136,16 @@ Step 3 选择进入深度优化的候选，Step 5 启动前查看各岛实际维
 
 ```powershell
 # 只检查工艺包络，不计算磁场
-python py_main.py workbench preflight --project results/de_novo --config examples/de_novo/config.json
+python py_main.py workbench preflight --project results/de_novo --config examples/de_novo/v6_config.json
 
 # 运行前 3 步，生成起点；已有合格前置步骤会复用
-python py_main.py workbench step 3 --auto --project results/de_novo --config examples/de_novo/config.json
+python py_main.py workbench step 3 --auto --project results/de_novo --config examples/de_novo/v6_config.json
 
 # 生成起点后查看各岛求解预算
 python py_main.py workbench solver-preflight --project results/de_novo
 
 # 无人值守运行全部六步，仅生成 Java、不编译 CLASS
-python py_main.py workbench all --project results/de_novo --config examples/de_novo/config.json --no-compile
+python py_main.py workbench all --project results/de_novo --config examples/de_novo/v6_config.json --no-compile
 ```
 
 | 想改什么 | 配置位置 |
@@ -134,6 +153,7 @@ python py_main.py workbench all --project results/de_novo --config examples/de_n
 | DSV / 平面 FOV、直径、场强与 ppm 门槛 | `target` |
 | 内孔、外径、总长 | `envelope` |
 | 磁块尺寸、剩磁、回复磁导率 | `magnet` |
+| 正式互耦模型、积分及单元细分、缓存与资源上限 | `physics` |
 | 槽隙、隔墙、底板、打印床、数量上限 | `manufacturing` |
 | 从零搜索的层数、列数与初筛规模 | `de_novo` |
 | 环数/列数是否参与优化、R/Z 调节范围 | `search` |
@@ -152,7 +172,10 @@ py_main.py                     命令行入口
 examples/seeded/                既有排布、配置与操作说明
 examples/de_novo/               需求搜索配置与操作说明
 mri_magnet/
-  field.py                     Magpylib 有限尺寸磁块求场与线性叠加
+  field.py                     固定源有限尺寸磁块求场与线性叠加
+  field_models.py              正式求场工厂、模型指纹与有界准备缓存
+  material_response.py         完整向量线性回复、自身与阵列互耦
+  physics_calibration.py       积分与空间离散精度标定
   manufacturing.py             打印约束、OBB 碰撞与床面容纳审查
   projection.py                PAVA 保序投影
   de_novo.py                   基底格点、灵敏度矩阵和拓扑反演
@@ -165,6 +188,7 @@ mri_magnet/
   evolution.py                 演化看板、GIF 与时间轴
   workbench_archive.py          报表、毫米级尺寸表与候选归档
   comsol_export.py             Java / CLASS 导出
+  comsol_validation.py         新建FEM任务、三级网格及外域收敛检查
   workbench*.py / .html / .js  六步工作台与离线三维交互
 support/tests/                 Python 与前端回归测试
 support/comsol/                已存 FEM 解读取与对标工具
@@ -182,7 +206,9 @@ docs/images/workbench.png      本页界面截图
 
 导出按磁化方向分组，并记录设计指纹。**CLASS 编译成功不代表 FEM 已求解通过。** 在 COMSOL 中检查几何、划分网格、求解，并使用与 Python 相同的材料、评价域、采样和单位比较。
 
-Magpylib 使用给定均匀磁化的有限磁块解析模型；示例开启孤立立方体自退磁近似，未包含完整磁体互耦。计算候选的最终性能需要 FEM 与实物测量确认。
+**材料范围：Br=1.43 T、μr=1.05。** V6以原始Br和线性回复磁导率建立 `J=Br·n+μ0(μr−1)H_local`，包含自身及其他磁块的局部场，保留三个磁化分量；**没有采用这一批磁铁实测的完整J–H曲线**，也不预测膝点、不可逆退磁或温度退磁。Br不是耦合后每块磁铁的固定J值。COMSOL同样输入原始Br与μr，避免重复施加退磁修正。
+
+FEM验收要求平均场相对误差≤0.5%，PPM差≤max(10 ppm, FEM PPM的10%)；只有网格和外空气域收敛后才作精度参考。性能门槛、模型精度与FEM验证分别报告。操作见 [V6说明](V6_阵列互耦操作说明.md)。
 
 ## 测试与依赖说明
 
@@ -192,6 +218,6 @@ Magpylib 使用给定均匀磁化的有限磁块解析模型；示例开启孤�
 python -m unittest discover -s support/tests -v
 ```
 
-当前验证（2026-11-03）：**470 项前后端回归测试全部通过，0 跳过**；新增工程分析还通过真实 3248 块方案与 WebGL / Canvas 浏览器检查。两套案例的配置与工艺预检均通过。大规模优化仍需在自己的设备上按预算运行，仓库不附带全量历史运行目录或虚拟环境。
+当前验证（2026-11-04）：**557项前后端回归测试全部通过，0跳过**。物理模型、缓存隔离、互耦优化闭环、优雅停止、FEM任务绑定和原六步界面均纳入回归。实际工程成绩及FEM状态见上方案例，测试通过不替代FEM精度验收。仓库不附带全量历史运行目录或虚拟环境。
 
 三维资源随仓库提供，保留 [Three.js MIT 许可](mri_magnet/vendor/THREE-LICENSE.txt)；其他依赖遵循各自许可证。本仓库暂未指定项目代码的再许可条款。

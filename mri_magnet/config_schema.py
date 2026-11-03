@@ -2,7 +2,7 @@
 from copy import deepcopy
 from .workbench_config import default_config, merge_config, validate_spec
 
-SCHEMA_VERSION=3
+SCHEMA_VERSION=6
 
 
 def _engineering_aliases(raw):
@@ -39,6 +39,13 @@ def canonicalize_config(raw, base=None, validate=True):
     raw=deepcopy(raw or {})
     if 'canonical_config' in raw:raw=deepcopy(raw['canonical_config'])
     raw=_engineering_aliases(raw)
+    # Standalone pre-V6 files retain their numerical interpretation. Partial
+    # UI edits inherit their current project's physics; new defaults are V6.
+    if base is None and raw and 'physics' not in raw:
+        raw['physics']={'field_model':'legacy'}
+        # Preserve historical finite-air exports as well as their source model.
+        if isinstance(raw.setdefault('deliverables',{}),dict):
+            raw['deliverables'].setdefault('air_radius_mm',650.)
     result=deepcopy(base) if base is not None else default_config()
     explicit_target='target' in raw
     old_disk='fov_diameter_mm' in raw

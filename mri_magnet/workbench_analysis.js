@@ -24,7 +24,41 @@
     const actual = analysis.domain || {}, target = config.target || {};
     if (actual.geometry !== target.geometry || Number(actual.diameter_mm) !== Number(target.diameter_mm) || Number(actual.z_mm ?? 0) !== Number(target.z_mm ?? 0)) return null;
     if (analysis.polarization_model !== (config.polarization_model || 'remanence')) return null;
+    // The saved run context, rather than the optionally selected comparison
+    // model, must match. A changed quadrature/cell model clears old slices.
+    if (physicsSignature(analysis.physics) !== physicsSignature(config.physics)) return null;
     return analysis;
+  }
+
+  function physicsSignature(physics) {
+    const p=physics||{},mode=p.field_model||'legacy';
+    return JSON.stringify(mode==='coupled'?[mode,Number(p.quadrature_order??2),Number(p.cells_per_axis??1),Number(p.residual_tolerance??1e-10),p.symmetry_reduction!==false]:[mode]);
+  }
+
+  function physicsLabel(config={}) {
+    const p=config.physics||{};
+    return p.field_model==='coupled'?'阵列互耦 · '+Number(p.quadrature_order??2)+' 阶积分 · 每轴 '+Number(p.cells_per_axis??1)+' 单元':'旧固定源模型 · '+(config.polarization_model||'remanence');
+  }
+
+  function physicsSummary(state={},design=null) {
+    const config=state.config||{},plan=state.solver_preflight?.physics||{},job=state.job||{},stage=job.physics_stage||{},stats=job.engine_statistics||{};
+    const stages={coupling_matrix:'装配阵列耦合矩阵',coupling_linear_solve:'求解自洽磁化',sampling:'计算观察点磁场'};
+    const progress=finite(stage.progress_percent)?' '+stage.progress_percent.toFixed(0)+'%':'';
+    const seconds=finite(plan.estimated_seconds)?'预计优化 '+(plan.estimated_seconds/3600).toFixed(2)+' 小时（按起点实测外推）':'预计时长：待起点实测';
+    const memory=finite(plan.estimated_parallel_working_bytes)?'并行工作数组约 '+(plan.estimated_parallel_working_bytes/1e6).toFixed(1)+' MB':'内存：待实际拓扑预检';
+    const task=state.analysis_job||{},verification=state.physics_validation_progress||{};
+    const detail=task.status==='running'&&task.kind?
+      (task.kind==='calibrate'?'互耦精度标定进行中':'COMSOL 网格 / 求解 / 采样进行中')+' · '+(verification.message||verification.event||'等待当前计算完成'):
+      stages[stage.stage]||stage.message||'等待下一次候选评估';
+    const validation=state.physics_validation||{},current=design||state.current_best?.design||state.best?.design;
+    const targetMatches=!validation.domain||JSON.stringify([validation.domain.geometry,Number(validation.domain.diameter_mm),Number(validation.domain.z_mm??0)])===JSON.stringify([config.target?.geometry,Number(config.target?.diameter_mm),Number(config.target?.z_mm??0)]);
+    const matched=Boolean(physicalSignature(current))&&physicalSignature(validation.design)===physicalSignature(current)&&physicsSignature(validation.physics)===physicsSignature(config.physics)&&targetMatches;
+    const accuracy=!matched&&validation.design?'其他方案验证记录；当前所选方案模型精度 / FEM 待验证。':
+      '模型精度：'+(matched&&validation.model_accuracy_passed===true?'通过':'待标定 / 未通过')+' · FEM：'+(matched&&validation.fem_verified===true?'已验证':'待验证')+'；性能门槛单独记录。';
+    return {label:physicsLabel(config),stage:detail+progress,
+      cost:'最大自洽未知数 '+(plan.max_unknowns??'—')+' · '+memory+' · '+seconds,
+      ledger:'自洽求解 '+(stats.self_consistent_solves??0)+' 次 · 准备 '+Number(stats.preparation_seconds??0).toFixed(2)+' s · 场采样 '+Number(stats.field_seconds??0).toFixed(2)+' s · 准备缓存命中 '+(stats.prepared_cache_hits??0)+' 次',
+      accuracy:accuracy+'求解残差不代表 FEM 精度通过。'};
   }
 
   // Shared signed scale: blue below reference, white at zero, red above reference.
@@ -60,7 +94,9 @@
 
   function requestPayload(source, options = {}) {
     if (!source?.design || !physicalSignature(source.design) || ['illustrative','reference','unavailable'].includes(source.kind)) throw new Error('请先生成并选择真实磁体方案。');
-    return {design:source.design, source_label:String(source.label || '当前磁体方案'), analysis_options:{mutual_demag:Boolean(options.mutual_demag), tolerance:options.tolerance !== false}};
+    const analysis_options={tolerance:options.tolerance !== false};
+    if(typeof options.mutual_demag==='boolean')analysis_options.mutual_demag=options.mutual_demag;
+    return {design:source.design, source_label:String(source.label || '当前磁体方案'), analysis_options};
   }
 
   function sensitiveRings(analysis, design) {
@@ -102,7 +138,13 @@
     return html+'<div class="analysis-muted">统计仅针对声明的公差分布、一阶位移代理及本次有限采样；不含碰撞或制造良率、密集极值和 FEM 认证。</div>';
   }
 
-  const exported = {physicalSignature, matchingAnalysis, ppmColor, sliceCells, requestPayload, sensitiveRings, zonalTerms, harmonicBars, toleranceSummaryHTML};
+  function candidateVerificationText(entry={}) {
+    const status=entry.physics_status||{};
+    if(status.verification_binding_valid!==true)return 'FEM 待验证 · Python 精度待标定';
+    return (status.fem_verified?'FEM 已收敛':'FEM 未通过收敛验收')+' · '+
+      (status.model_accuracy_passed?'Python 精度通过':'当前优化档位的 Python 精度未通过');
+  }
+  const exported = {physicalSignature, physicsSignature, physicsLabel, physicsSummary, candidateVerificationText, matchingAnalysis, ppmColor, sliceCells, requestPayload, sensitiveRings, zonalTerms, harmonicBars, toleranceSummaryHTML};
   root.MRIAnalysis = exported;
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
 })(typeof window === 'undefined' ? globalThis : window);

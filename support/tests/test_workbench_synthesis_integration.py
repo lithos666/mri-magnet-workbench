@@ -17,6 +17,7 @@ class ConstraintOnlyWorkbenchTests(unittest.TestCase):
         cls.workbench = Workbench(cls.root)
         cls.workbench.update_config({
             'mode':'de_novo', 'source_geometry':'DOES_NOT_EXIST/placement-05.json',
+            'physics':{'field_model':'legacy'},  # Historical 35mT baseline, unchanged physical assertions.
             'target':{'geometry':'sphere','diameter_mm':20.,'z_mm':0.,'min_field_mT':35.,'max_ppm':3000.},
             'de_novo':{'pair_counts':[5,6,7], 'column_counts':[24,28,32], 'seed_count':3,
                        'milp_time_limit_seconds':3.,'max_attempts':6},

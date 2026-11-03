@@ -1,0 +1,1169 @@
+{
+  "rings": [
+    {
+      "id": "R01-L1",
+      "layer_index": 0,
+      "slot_index": 0,
+      "radius_mm": 116.0,
+      "z_mm": 202.60165346431882,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R01-L2",
+      "layer_index": 0,
+      "slot_index": 1,
+      "radius_mm": 128.0,
+      "z_mm": 202.60165346431882,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R01-L3",
+      "layer_index": 0,
+      "slot_index": 2,
+      "radius_mm": 140.3453223161105,
+      "z_mm": 202.60165346431882,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R01-L4",
+      "layer_index": 0,
+      "slot_index": 3,
+      "radius_mm": 153.19389146606252,
+      "z_mm": 202.60165346431882,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R01-L5",
+      "layer_index": 0,
+      "slot_index": 4,
+      "radius_mm": 166.5943484063971,
+      "z_mm": 202.60165346431882,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R01-L6",
+      "layer_index": 0,
+      "slot_index": 5,
+      "radius_mm": 180.60270956362268,
+      "z_mm": 202.60165346431882,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R01-L7",
+      "layer_index": 0,
+      "slot_index": 6,
+      "radius_mm": 195.2882699340681,
+      "z_mm": 202.60165346431882,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R01-L8",
+      "layer_index": 0,
+      "slot_index": 7,
+      "radius_mm": 210.75893170233337,
+      "z_mm": 202.60165346431882,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R02-L1",
+      "layer_index": 1,
+      "slot_index": 0,
+      "radius_mm": 116.0,
+      "z_mm": 167.91612384748666,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R02-L2",
+      "layer_index": 1,
+      "slot_index": 1,
+      "radius_mm": 128.0,
+      "z_mm": 167.91612384748666,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R02-L3",
+      "layer_index": 1,
+      "slot_index": 2,
+      "radius_mm": 140.3453223161105,
+      "z_mm": 167.91612384748666,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R02-L4",
+      "layer_index": 1,
+      "slot_index": 3,
+      "radius_mm": 153.19389146606252,
+      "z_mm": 167.91612384748666,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R02-L5",
+      "layer_index": 1,
+      "slot_index": 4,
+      "radius_mm": 166.5943484063971,
+      "z_mm": 167.91612384748666,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R02-L6",
+      "layer_index": 1,
+      "slot_index": 5,
+      "radius_mm": 180.34119037001017,
+      "z_mm": 167.91612384748666,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R02-L7",
+      "layer_index": 1,
+      "slot_index": 6,
+      "radius_mm": 195.3405496221126,
+      "z_mm": 167.91612384748666,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R02-L8",
+      "layer_index": 1,
+      "slot_index": 7,
+      "radius_mm": 210.64698060576976,
+      "z_mm": 167.91612384748666,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R03-L1",
+      "layer_index": 2,
+      "slot_index": 0,
+      "radius_mm": 116.0,
+      "z_mm": 135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R03-L2",
+      "layer_index": 2,
+      "slot_index": 1,
+      "radius_mm": 128.0,
+      "z_mm": 135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R03-L3",
+      "layer_index": 2,
+      "slot_index": 2,
+      "radius_mm": 140.3453223161105,
+      "z_mm": 135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R03-L4",
+      "layer_index": 2,
+      "slot_index": 3,
+      "radius_mm": 153.19389146606252,
+      "z_mm": 135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R03-L5",
+      "layer_index": 2,
+      "slot_index": 4,
+      "radius_mm": 166.5943484063971,
+      "z_mm": 135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R03-L6",
+      "layer_index": 2,
+      "slot_index": 5,
+      "radius_mm": 180.60270956362268,
+      "z_mm": 135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R03-L7",
+      "layer_index": 2,
+      "slot_index": 6,
+      "radius_mm": 195.48953829296383,
+      "z_mm": 135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R03-L8",
+      "layer_index": 2,
+      "slot_index": 7,
+      "radius_mm": 210.78658147607882,
+      "z_mm": 135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R04-L1",
+      "layer_index": 3,
+      "slot_index": 0,
+      "radius_mm": 116.0,
+      "z_mm": 105.08999250958628,
+      "count": 28,
+      "polarity": "up",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R04-L2",
+      "layer_index": 3,
+      "slot_index": 1,
+      "radius_mm": 128.0,
+      "z_mm": 105.08999250958628,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R04-L3",
+      "layer_index": 3,
+      "slot_index": 2,
+      "radius_mm": 140.0,
+      "z_mm": 105.08999250958628,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R04-L4",
+      "layer_index": 3,
+      "slot_index": 3,
+      "radius_mm": 152.44490869829633,
+      "z_mm": 105.08999250958628,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R04-L5",
+      "layer_index": 3,
+      "slot_index": 4,
+      "radius_mm": 165.4114075943588,
+      "z_mm": 105.08999250958628,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R04-L6",
+      "layer_index": 3,
+      "slot_index": 5,
+      "radius_mm": 178.94774904416116,
+      "z_mm": 105.08999250958628,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R04-L8",
+      "layer_index": 3,
+      "slot_index": 7,
+      "radius_mm": 210.30691793876719,
+      "z_mm": 105.08999250958628,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R05-L1",
+      "layer_index": 4,
+      "slot_index": 0,
+      "radius_mm": 116.65405508154919,
+      "z_mm": 77.22456223372754,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R05-L2",
+      "layer_index": 4,
+      "slot_index": 1,
+      "radius_mm": 129.18455824410307,
+      "z_mm": 77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R05-L3",
+      "layer_index": 4,
+      "slot_index": 2,
+      "radius_mm": 142.10134415089618,
+      "z_mm": 77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R05-L4",
+      "layer_index": 4,
+      "slot_index": 3,
+      "radius_mm": 154.8140332379687,
+      "z_mm": 77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R05-L5",
+      "layer_index": 4,
+      "slot_index": 4,
+      "radius_mm": 167.99023717885893,
+      "z_mm": 77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R05-L6",
+      "layer_index": 4,
+      "slot_index": 5,
+      "radius_mm": 181.67700257651205,
+      "z_mm": 77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R05-L7",
+      "layer_index": 4,
+      "slot_index": 6,
+      "radius_mm": 195.9325283268874,
+      "z_mm": 77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R05-L8",
+      "layer_index": 4,
+      "slot_index": 7,
+      "radius_mm": 210.84743840499044,
+      "z_mm": 77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R06-L3",
+      "layer_index": 5,
+      "slot_index": 2,
+      "radius_mm": 140.14799637294192,
+      "z_mm": 51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R06-L4",
+      "layer_index": 5,
+      "slot_index": 3,
+      "radius_mm": 153.68165401172232,
+      "z_mm": 51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R06-L5",
+      "layer_index": 5,
+      "slot_index": 4,
+      "radius_mm": 167.0145969753312,
+      "z_mm": 51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R06-L6",
+      "layer_index": 5,
+      "slot_index": 5,
+      "radius_mm": 181.17504972096208,
+      "z_mm": 51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R06-L7",
+      "layer_index": 5,
+      "slot_index": 6,
+      "radius_mm": 195.447406768382,
+      "z_mm": 51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R06-L8",
+      "layer_index": 5,
+      "slot_index": 7,
+      "radius_mm": 210.78079354632854,
+      "z_mm": 51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R07-L1",
+      "layer_index": 6,
+      "slot_index": 0,
+      "radius_mm": 116.0,
+      "z_mm": 31.599999999999998,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R07-L2",
+      "layer_index": 6,
+      "slot_index": 1,
+      "radius_mm": 128.0,
+      "z_mm": 31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R07-L3",
+      "layer_index": 6,
+      "slot_index": 2,
+      "radius_mm": 140.0,
+      "z_mm": 31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R07-L4",
+      "layer_index": 6,
+      "slot_index": 3,
+      "radius_mm": 152.44490869829633,
+      "z_mm": 31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R07-L5",
+      "layer_index": 6,
+      "slot_index": 4,
+      "radius_mm": 165.4114075943588,
+      "z_mm": 31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R07-L6",
+      "layer_index": 6,
+      "slot_index": 5,
+      "radius_mm": 178.94774904416116,
+      "z_mm": 31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R07-L8",
+      "layer_index": 6,
+      "slot_index": 7,
+      "radius_mm": 210.30691793876719,
+      "z_mm": 31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R08-L1",
+      "layer_index": 7,
+      "slot_index": 0,
+      "radius_mm": 116.39302450374119,
+      "z_mm": 12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R08-L3",
+      "layer_index": 7,
+      "slot_index": 2,
+      "radius_mm": 140.19371239921188,
+      "z_mm": 12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R08-L4",
+      "layer_index": 7,
+      "slot_index": 3,
+      "radius_mm": 152.63492404846153,
+      "z_mm": 12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R08-L5",
+      "layer_index": 7,
+      "slot_index": 4,
+      "radius_mm": 165.5933916476849,
+      "z_mm": 12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R08-L6",
+      "layer_index": 7,
+      "slot_index": 5,
+      "radius_mm": 179.11696659120383,
+      "z_mm": 12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R08-L7",
+      "layer_index": 7,
+      "slot_index": 6,
+      "radius_mm": 193.2582404774985,
+      "z_mm": 12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R09-L1",
+      "layer_index": 8,
+      "slot_index": 0,
+      "radius_mm": 116.39302450374119,
+      "z_mm": -12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R09-L3",
+      "layer_index": 8,
+      "slot_index": 2,
+      "radius_mm": 140.19371239921188,
+      "z_mm": -12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R09-L4",
+      "layer_index": 8,
+      "slot_index": 3,
+      "radius_mm": 152.63492404846153,
+      "z_mm": -12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R09-L5",
+      "layer_index": 8,
+      "slot_index": 4,
+      "radius_mm": 165.5933916476849,
+      "z_mm": -12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R09-L6",
+      "layer_index": 8,
+      "slot_index": 5,
+      "radius_mm": 179.11696659120383,
+      "z_mm": -12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R09-L7",
+      "layer_index": 8,
+      "slot_index": 6,
+      "radius_mm": 193.2582404774985,
+      "z_mm": -12.2,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R10-L1",
+      "layer_index": 9,
+      "slot_index": 0,
+      "radius_mm": 116.0,
+      "z_mm": -31.599999999999998,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R10-L2",
+      "layer_index": 9,
+      "slot_index": 1,
+      "radius_mm": 128.0,
+      "z_mm": -31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R10-L3",
+      "layer_index": 9,
+      "slot_index": 2,
+      "radius_mm": 140.0,
+      "z_mm": -31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R10-L4",
+      "layer_index": 9,
+      "slot_index": 3,
+      "radius_mm": 152.44490869829633,
+      "z_mm": -31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R10-L5",
+      "layer_index": 9,
+      "slot_index": 4,
+      "radius_mm": 165.4114075943588,
+      "z_mm": -31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R10-L6",
+      "layer_index": 9,
+      "slot_index": 5,
+      "radius_mm": 178.94774904416116,
+      "z_mm": -31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R10-L8",
+      "layer_index": 9,
+      "slot_index": 7,
+      "radius_mm": 210.30691793876719,
+      "z_mm": -31.599999999999998,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R11-L3",
+      "layer_index": 10,
+      "slot_index": 2,
+      "radius_mm": 140.14799637294192,
+      "z_mm": -51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R11-L4",
+      "layer_index": 10,
+      "slot_index": 3,
+      "radius_mm": 153.68165401172232,
+      "z_mm": -51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R11-L5",
+      "layer_index": 10,
+      "slot_index": 4,
+      "radius_mm": 167.0145969753312,
+      "z_mm": -51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R11-L6",
+      "layer_index": 10,
+      "slot_index": 5,
+      "radius_mm": 181.17504972096208,
+      "z_mm": -51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R11-L7",
+      "layer_index": 10,
+      "slot_index": 6,
+      "radius_mm": 195.447406768382,
+      "z_mm": -51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R11-L8",
+      "layer_index": 10,
+      "slot_index": 7,
+      "radius_mm": 210.78079354632854,
+      "z_mm": -51.0,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R12-L1",
+      "layer_index": 11,
+      "slot_index": 0,
+      "radius_mm": 116.65405508154919,
+      "z_mm": -77.22456223372754,
+      "count": 28,
+      "polarity": "out",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R12-L2",
+      "layer_index": 11,
+      "slot_index": 1,
+      "radius_mm": 129.18455824410307,
+      "z_mm": -77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R12-L3",
+      "layer_index": 11,
+      "slot_index": 2,
+      "radius_mm": 142.10134415089618,
+      "z_mm": -77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R12-L4",
+      "layer_index": 11,
+      "slot_index": 3,
+      "radius_mm": 154.8140332379687,
+      "z_mm": -77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R12-L5",
+      "layer_index": 11,
+      "slot_index": 4,
+      "radius_mm": 167.99023717885893,
+      "z_mm": -77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R12-L6",
+      "layer_index": 11,
+      "slot_index": 5,
+      "radius_mm": 181.67700257651205,
+      "z_mm": -77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R12-L7",
+      "layer_index": 11,
+      "slot_index": 6,
+      "radius_mm": 195.9325283268874,
+      "z_mm": -77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R12-L8",
+      "layer_index": 11,
+      "slot_index": 7,
+      "radius_mm": 210.84743840499044,
+      "z_mm": -77.22456223372754,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R13-L1",
+      "layer_index": 12,
+      "slot_index": 0,
+      "radius_mm": 116.0,
+      "z_mm": -105.08999250958628,
+      "count": 28,
+      "polarity": "up",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R13-L2",
+      "layer_index": 12,
+      "slot_index": 1,
+      "radius_mm": 128.0,
+      "z_mm": -105.08999250958628,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R13-L3",
+      "layer_index": 12,
+      "slot_index": 2,
+      "radius_mm": 140.0,
+      "z_mm": -105.08999250958628,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R13-L4",
+      "layer_index": 12,
+      "slot_index": 3,
+      "radius_mm": 152.44490869829633,
+      "z_mm": -105.08999250958628,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R13-L5",
+      "layer_index": 12,
+      "slot_index": 4,
+      "radius_mm": 165.4114075943588,
+      "z_mm": -105.08999250958628,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R13-L6",
+      "layer_index": 12,
+      "slot_index": 5,
+      "radius_mm": 178.94774904416116,
+      "z_mm": -105.08999250958628,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R13-L8",
+      "layer_index": 12,
+      "slot_index": 7,
+      "radius_mm": 210.30691793876719,
+      "z_mm": -105.08999250958628,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R14-L1",
+      "layer_index": 13,
+      "slot_index": 0,
+      "radius_mm": 116.0,
+      "z_mm": -135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R14-L2",
+      "layer_index": 13,
+      "slot_index": 1,
+      "radius_mm": 128.0,
+      "z_mm": -135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R14-L3",
+      "layer_index": 13,
+      "slot_index": 2,
+      "radius_mm": 140.3453223161105,
+      "z_mm": -135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R14-L4",
+      "layer_index": 13,
+      "slot_index": 3,
+      "radius_mm": 153.19389146606252,
+      "z_mm": -135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R14-L5",
+      "layer_index": 13,
+      "slot_index": 4,
+      "radius_mm": 166.5943484063971,
+      "z_mm": -135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R14-L6",
+      "layer_index": 13,
+      "slot_index": 5,
+      "radius_mm": 180.60270956362268,
+      "z_mm": -135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R14-L7",
+      "layer_index": 13,
+      "slot_index": 6,
+      "radius_mm": 195.48953829296383,
+      "z_mm": -135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R14-L8",
+      "layer_index": 13,
+      "slot_index": 7,
+      "radius_mm": 210.78658147607882,
+      "z_mm": -135.377803161114,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R15-L1",
+      "layer_index": 14,
+      "slot_index": 0,
+      "radius_mm": 116.0,
+      "z_mm": -167.91612384748666,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R15-L2",
+      "layer_index": 14,
+      "slot_index": 1,
+      "radius_mm": 128.0,
+      "z_mm": -167.91612384748666,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R15-L3",
+      "layer_index": 14,
+      "slot_index": 2,
+      "radius_mm": 140.3453223161105,
+      "z_mm": -167.91612384748666,
+      "count": 28,
+      "polarity": "down",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R15-L4",
+      "layer_index": 14,
+      "slot_index": 3,
+      "radius_mm": 153.19389146606252,
+      "z_mm": -167.91612384748666,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R15-L5",
+      "layer_index": 14,
+      "slot_index": 4,
+      "radius_mm": 166.5943484063971,
+      "z_mm": -167.91612384748666,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R15-L6",
+      "layer_index": 14,
+      "slot_index": 5,
+      "radius_mm": 180.34119037001017,
+      "z_mm": -167.91612384748666,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R15-L7",
+      "layer_index": 14,
+      "slot_index": 6,
+      "radius_mm": 195.3405496221126,
+      "z_mm": -167.91612384748666,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R15-L8",
+      "layer_index": 14,
+      "slot_index": 7,
+      "radius_mm": 210.64698060576976,
+      "z_mm": -167.91612384748666,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R16-L1",
+      "layer_index": 15,
+      "slot_index": 0,
+      "radius_mm": 116.0,
+      "z_mm": -202.60165346431882,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R16-L2",
+      "layer_index": 15,
+      "slot_index": 1,
+      "radius_mm": 128.0,
+      "z_mm": -202.60165346431882,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R16-L3",
+      "layer_index": 15,
+      "slot_index": 2,
+      "radius_mm": 140.3453223161105,
+      "z_mm": -202.60165346431882,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R16-L4",
+      "layer_index": 15,
+      "slot_index": 3,
+      "radius_mm": 153.19389146606252,
+      "z_mm": -202.60165346431882,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R16-L5",
+      "layer_index": 15,
+      "slot_index": 4,
+      "radius_mm": 166.5943484063971,
+      "z_mm": -202.60165346431882,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R16-L6",
+      "layer_index": 15,
+      "slot_index": 5,
+      "radius_mm": 180.60270956362268,
+      "z_mm": -202.60165346431882,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R16-L7",
+      "layer_index": 15,
+      "slot_index": 6,
+      "radius_mm": 195.2882699340681,
+      "z_mm": -202.60165346431882,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    },
+    {
+      "id": "R16-L8",
+      "layer_index": 15,
+      "slot_index": 7,
+      "radius_mm": 210.75893170233337,
+      "z_mm": -202.60165346431882,
+      "count": 28,
+      "polarity": "in",
+      "phase_deg": -83.57142857142857
+    }
+  ],
+  "cube_mm": 12.0,
+  "remanence_T": 1.43,
+  "reference_mur": 1.05,
+  "name": "continuous_candidate",
+  "source_sha256": ""
+}

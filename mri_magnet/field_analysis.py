@@ -53,7 +53,8 @@ def analyze_design(design,config,output_dir,options=None,source_label=''):
         if key not in ('mutual_demag','tolerance'):raise ValueError('未知分析选项: '+key)
         if not isinstance(options[key],bool):raise ValueError(key+'必须为布尔值')
     sample=analysis_sample(config)
-    selected_mutual=options.get('mutual_demag',settings['mutual_demag']['enabled'])
+    run_coupled=config.get('physics',{}).get('field_model')=='coupled'
+    selected_mutual=options.get('mutual_demag',run_coupled or settings['mutual_demag']['enabled'])
     selected_tolerance=options.get('tolerance',settings['tolerance']['enabled'])
     maximum_columns=max(r.count for r in design.rings)
     n_phi=max(65,4*maximum_columns+1)
@@ -65,6 +66,9 @@ def analyze_design(design,config,output_dir,options=None,source_label=''):
     if estimated_pairs>settings['max_source_point_pairs']:
         raise ValueError('工程分析预计约%d次源点贡献，超过配置上限%d；请降低分析采样/网格或显式调高预算'%(estimated_pairs,settings['max_source_point_pairs']))
     response_options={key:value for key,value in settings['mutual_demag'].items() if key!='enabled'}
+    if run_coupled:
+        from .field_models import response_options as physics_options
+        response_options=physics_options(config)
     response_plan=None;tolerance_plan=None
     if selected_mutual:
         from .material_response import preflight_response
@@ -89,6 +93,8 @@ def analyze_design(design,config,output_dir,options=None,source_label=''):
     report={'schema':'engineering-analysis-v1','design':design.to_dict(),
         'design_sha256':canonical_physical_sha256(design),'source_label':str(source_label)[:240],
         'polarization_model':config['polarization_model'],'field_model_used':engine.polarization_model,
+        'physics':deepcopy(config.get('physics',{})),
+        'model_scope':'run_model' if selected_mutual==run_coupled else 'explicit_comparison_model',
         'domain':deepcopy(config['target']),'pointset':sample['name'],'point_count':len(fields),
         'fast_model_metrics':fast_metrics,'analysis_model_metrics':metrics,
         'preflight':{'estimated_source_point_pairs':estimated_pairs,'source_point_pair_limit':settings['max_source_point_pairs'],

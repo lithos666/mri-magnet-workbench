@@ -22,6 +22,7 @@ from test_islands import seed,PROCESS
 
 def configure(wb,mode='de_novo'):
     wb.update_config({'mode':mode,'source_geometry':'synthetic_layout.json',
+        'physics':{'field_model':'legacy'},  # Preserve this V3 stop/field fixture; V6 has separate coupled coverage.
         'target':{'geometry':'sphere','diameter_mm':10.,'z_mm':0.,'min_field_mT':.001,'max_ppm':1e6},
         'envelope':{'protected_bore_diameter_mm':40.,'max_outer_diameter_mm':200.,'max_length_mm':300.},
         'magnet':{'cube_mm':4.,'remanence_T':1.43,'reference_mur':1.05},

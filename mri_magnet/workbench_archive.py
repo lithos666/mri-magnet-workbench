@@ -20,6 +20,46 @@ from .serialization import jsonable, save_json
 _POLARITY = {"out": "N径向朝外", "in": "N径向朝内", "down": "N轴向-Z", "up": "N轴向+Z"}
 
 
+def physics_status(row, config):
+    """Independent accuracy/FEM flags; exporting a class never verifies either."""
+    from .identity import canonical_physical_sha256
+    from .field_models import model_fingerprint
+    physics = config.get('physics') or {'field_model':'legacy'}
+    coupled = physics.get('field_model') == 'coupled'
+    verification = row.get('physics_validation') or {}
+    binding_errors=[]
+    try:
+        design_matches=bool(row.get('design')) and verification.get('design_sha256')==canonical_physical_sha256(row['design'])
+    except (ValueError,TypeError,KeyError,AttributeError):
+        design_matches=False
+    if not design_matches:binding_errors.append('verification design binding is missing or mismatched')
+    try:
+        model_matches=verification.get('model_fingerprint')==model_fingerprint(config)
+    except (ValueError,TypeError,KeyError,AttributeError):
+        model_matches=False
+    if not model_matches:binding_errors.append('verification model binding is missing or mismatched')
+    if not isinstance(verification.get('domain'),dict) or verification['domain']!=config.get('target'):
+        binding_errors.append('verification domain binding is missing or mismatched')
+    binding_valid=not binding_errors
+    return {'physics':dict(physics), 'field_model':'coupled' if coupled else 'legacy',
+            'model_label':('阵列自洽互耦 · %d阶积分 · 每轴%d单元' %
+                (physics.get('quadrature_order',2),physics.get('cells_per_axis',1))) if coupled
+                else '固定源 · '+config.get('polarization_model','remanence'),
+            'model_accuracy_passed':binding_valid and verification.get('model_accuracy_passed') is True,
+            'fem_verified':binding_valid and verification.get('fem_verified') is True,
+            'verification_binding_valid':binding_valid,'verification_binding_errors':binding_errors,
+            'verification':verification}
+
+
+def metric_comparison_rows(row, config):
+    """Same-design models and point sets remain distinguishable in reports."""
+    status=physics_status(row,config);verification=status['verification']
+    return [('旧快速模型对照',row.get('legacy_metrics') or verification.get('legacy_metrics')),
+            (('耦合' if status['field_model']=='coupled' else '固定源')+'训练',row.get('training_metrics')),
+            (('耦合' if status['field_model']=='coupled' else '固定源')+'密集复核',_metrics(row)),
+            ('COMSOL FEM',verification.get('fem_metrics') if status['fem_verified'] else None)]
+
+
 def _fmt(value, digits=4):
     if value is None:
         return "—"
@@ -180,6 +220,7 @@ def archive_run(run_dir, config, seeds, validated_records, optimization_result, 
         row["performance_check"] = check_performance(row["metrics"], requirements)
         row["manufacturing_check"] = audit_manufacturing(design, config["manufacturing"], limits)
         row["feasible"] = row["performance_check"]["valid"] and row["manufacturing_check"]["valid"]
+        row['physics_status']=physics_status(row,config)
         records.append(row)
     records.sort(key=lambda r: (not r["manufacturing_check"]["valid"],
                                feasibility_score(r["metrics"], requirements),
@@ -218,9 +259,13 @@ def archive_run(run_dir, config, seeds, validated_records, optimization_result, 
             manufacturing_audit=row["manufacturing_check"], reference_design=reference_design,
             reference_label='合成起点' if config.get('mode')=='de_novo' else '打印投影起点')
         save_json(folder/"设计.json", design.to_dict())
+        status=row['physics_status']
         save_json(folder/"复核指标.json", {"training": row.get("training_metrics"), "dense": metrics,
                   "performance": row["performance_check"], "manufacturing": row["manufacturing_check"],
-                  "domain": config["target"], "fem_verified": False})
+                  "domain": config["target"], "physics_status":status,
+                  "legacy":row.get('legacy_metrics') or status['verification'].get('legacy_metrics'),
+                  "fem":status['verification'].get('fem_metrics'),
+                  "fem_verified":status['fem_verified'],"model_accuracy_passed":status['model_accuracy_passed']})
         changes = physical_change_rows(design, reference_design)
         save_json(folder/'尺寸改动_毫米.json',{'units':'mm','radial_label':'inner face radius = center radius - cube_mm/2',
             'cube_mm':design.cube_mm,'rows':changes})
@@ -253,7 +298,10 @@ def archive_run(run_dir, config, seeds, validated_records, optimization_result, 
             "布局图": row["layout_file"], "尺寸改动表": row["changes_file"],
             "Java": model.get("java_file") if model else "",
             "CLASS": model.get("class_file") if model else "",
-            "导出状态": model["status"] if model else "未导出", "FEM复核": "未执行"})
+            "导出状态": model["status"] if model else "未导出",
+            "求场模型":status['model_label'],
+            "Python模型精度":'通过' if status['model_accuracy_passed'] else '未通过或待标定',
+            "FEM复核":'已验证' if status['fem_verified'] else '待验证'})
     _write_csv(root/artifacts["comparison"], comparison,
                list(comparison[0]) if comparison else ["方案", "平均场_mT", "峰峰值_ppm"])
     best = delivered[0] if delivered else None
@@ -297,6 +345,21 @@ def archive_run(run_dir, config, seeds, validated_records, optimization_result, 
             lines.extend(["", "相对同点集起点：ΔB=%+.6f mT，ppm 下降 %s%%。" % (delta, _fmt(decrease, 3))])
         else:
             lines.extend(["", "起点与最佳若使用不同点集，表中明确列出；不据此计算改进百分比。"])
+    if best:
+        status=best['physics_status']
+        lines.extend(['','## 物理模型与独立验收','',
+            '本轮求场：'+status['model_label']+'。',
+            '性能门槛：'+('通过' if best['performance_check']['valid'] else '未通过')+
+            '；Python模型精度：'+('通过' if status['model_accuracy_passed'] else '未通过或待标定')+
+            '；FEM：'+('已验证' if status['fem_verified'] else '待验证')+'。','',
+            '| 同一排布的计算口径 | 平均场 mT | 峰峰值 ppm | 点集 |',
+            '|---|---:|---:|---|'])
+        for label,m in metric_comparison_rows(best,config):
+            lines.append('| %s | %s | %s | %s |'%(label,
+                _fmt(m['mean_norm_T']*1e3,6) if m else '—',
+                _fmt(m['pp_norm_ppm'],6) if m else '—',m.get('pointset','未记录') if m else '未计算或未通过验证'))
+        lines.extend(['','模型精度门槛：相对收敛COMSOL平均场偏差≤0.5%；PPM差≤max(10 ppm，COMSOL值的10%)。',
+            '不同点集或不同物理模型的指标不直接混合排序；未计算的对照不以其他口径代填。'])
     recommendations=[]
     for role in ('balanced','high_field','lowest_ppm'):
         selected = roles.get(role)
@@ -361,7 +424,7 @@ def archive_run(run_dir, config, seeds, validated_records, optimization_result, 
             best["layout_file"], best["changes_file"]), "", "## 各磁环物理改动", ""])
         lines.extend(_changes_markdown(physical_change_rows(Design.from_dict(best["design"]),
             Design.from_dict(baseline["design"]) if baseline else None)))
-    lines.extend(["", "磁场指标来自固定磁化解析模型，COMSOL 文件导出或编译不代表 FEM 网格、求解或精度复核已经完成。",
+    lines.extend(["", "磁场指标采用本轮配置的求场模型；COMSOL 文件导出或编译不代表 FEM 网格、求解或精度复核已经完成。",
                   "全局最优未证明。训练、密集复核、监控预览与基函数预计算的求场成本分开记录。", ""])
     (root/artifacts["overview"]).write_text("\n".join(lines), encoding="utf-8")
     esc = lambda value: html.escape(str(value), quote=True)
@@ -371,7 +434,9 @@ def archive_run(run_dir, config, seeds, validated_records, optimization_result, 
         cards.append('<article><h2>%s · %s mT / %s ppm</h2><p>%s</p><a href="%s"><img src="%s" alt="R–Z磁铁布局图"></a>'
                      '<p><a href="%s">毫米尺寸表</a> · <a href="%s/设计.json">精确设计</a></p></article>' % (
             esc(row["archive_label"]), esc(_fmt(m["mean_norm_T"]*1e3, 6)), esc(_fmt(m["pp_norm_ppm"], 6)),
-            gate_label+"通过；FEM 待复核" if row["feasible"] else "诊断方案：未满足全部门槛；FEM 待复核",
+            esc(row['physics_status']['model_label']+'；'+(gate_label+'通过' if row['feasible'] else '诊断方案：未满足全部门槛')+
+                '；模型精度'+('通过' if row['physics_status']['model_accuracy_passed'] else '待标定')+
+                '；FEM '+('已验证' if row['physics_status']['fem_verified'] else '待复核')),
             esc(row["layout_file"]), esc(row["layout_file"]), esc(row["changes_file"]), esc(row["folder"])))
     media = ""
     evolution = evolution or {}
@@ -407,7 +472,9 @@ def archive_run(run_dir, config, seeds, validated_records, optimization_result, 
               "pareto_recommendations": recommendations,
               "pareto_front_ids": [r.get('candidate_id') for r in front],
               "scoring": requirements['scoring'],
-              "fem_verified": False, "global_optimum_proven": False,
+              "fem_verified": bool(best and best['physics_status']['fem_verified']),
+              "model_accuracy_passed":bool(best and best['physics_status']['model_accuracy_passed']),
+              "physics":dict(config.get('physics') or {'field_model':'legacy'}),"global_optimum_proven": False,
               "paths_relative_to_run_root": True, "domain": config["target"]}
     save_json(root/artifacts["manifest"], result)
     save_json(details/"archive_inputs.json", diagnostics)

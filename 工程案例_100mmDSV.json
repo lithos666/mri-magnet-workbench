@@ -1,5 +1,9 @@
 {
   "mode": "de_novo",
+  "physics": {"field_model":"coupled", "quadrature_order":2, "cells_per_axis":1,
+    "interaction_backend":"analytic_tensor",
+    "residual_tolerance":1e-10, "prepared_cache_size":4, "max_unknowns":1200,
+    "max_matrix_mb":128.0, "max_magnets":10000, "chunk_points":48, "symmetry_reduction":true},
   "source_geometry": "__NOT_USED_NO_SOURCE_LAYOUT__.json",
   "target": {"geometry": "sphere", "diameter_mm": 100.0, "z_mm": 0.0, "min_field_mT": 40.0, "max_ppm": null},
   "envelope": {"protected_bore_diameter_mm": 200.0, "max_outer_diameter_mm": 440.0, "max_length_mm": 500.0},
@@ -23,11 +27,11 @@
   "sampling": {"preset": "quick", "common_symmetry": true, "training_volume": 96, "training_surface": 192,
     "validation_volume": 2048, "validation_surface": 2048, "refine_starts": 6},
   "solver": {"max_evaluations": 2400, "population_size": 32, "maxiter": 100, "budget_policy": "strict",
-    "max_workers": 2, "local_refine_evaluations": 240, "active_set_evaluations": 300,
+    "max_workers": 1, "local_refine_evaluations": 240, "active_set_evaluations": 240,
     "initial_local_fraction": 0.75, "initial_sigma_mm": 0.8,
     "active_set_trust_radius": 0.03, "active_set_fd_step": 0.002},
   "evolution": {"enabled": true, "grid_points": 25, "max_frames": 36, "min_refresh_seconds": 8.0, "generation_interval": 1},
   "deliverables": {"compile": true, "runtime_validate": false, "timeout_seconds": 300},
   "polarization_model": "isolated_cube_self_demag", "chunk_points": 48,
-  "max_validation_candidates": 7, "seed": 20261102
+  "max_validation_candidates": 7, "seed": 20261101
 }

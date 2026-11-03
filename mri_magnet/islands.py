@@ -53,6 +53,8 @@ def _as_design(value):
 def _run_job(job):
     """Picklable worker entry; construct closures only inside the worker."""
     topology = _as_design(job['topology'])
+    previous_engine=getattr(job['evaluator'],'engine',None)
+    statistics_before=dict(previous_engine.statistics) if previous_engine is not None else {}
     variables, builder = get_search_space(topology, job['process'], job['limits'], job['search'])
     compatible = []
     accepted_sources = []
@@ -75,6 +77,25 @@ def _run_job(job):
     if event_queue is not None:
         def callback(event):
             event_queue.put((job['island'], event))
+    if callback and hasattr(job['evaluator'],'status_callback'):
+        upstream=callback;last={'evaluations':0,'status_time':0.}
+        def callback(event):
+            last['evaluations']=int(event.get('field_evaluations',last['evaluations']))
+            engine=getattr(job['evaluator'],'engine',None)
+            value=dict(event)
+            if engine is not None:
+                value['engine_statistics']=dict(engine.statistics)
+                if event.get('design') and event.get('event') in ('baseline','new_best','final','stage_end') and hasattr(engine,'export_prepared'):
+                    value['prepared_response']=engine.export_prepared(_as_design(event['design']))
+            upstream(value)
+        def physics_status(status):
+            now=time.monotonic()
+            if now-last['status_time']<.5:return
+            last['status_time']=now
+            engine=getattr(job['evaluator'],'engine',None)
+            upstream({'event':'physics_progress','field_evaluations':last['evaluations'],
+                'physics_stage':status,'engine_statistics':dict(engine.statistics) if engine is not None else {}})
+        job['evaluator'].status_callback=physics_status
     if callback:
         callback({'event':'island_status','island_status':'running','stage_name':'initialization',
                   'field_evaluations':0,'allocation':job['allocation']})
@@ -117,6 +138,11 @@ def _run_job(job):
         'compatible_warm_sources': accepted_sources,
         'continuation': 'restart_with_saved_incumbents_in_original_parameter_windows',
     }
+    engine=getattr(job['evaluator'],'engine',None)
+    if engine is not None:
+        result['metadata']['engine_statistics']={key:value-statistics_before.get(key,0)
+            for key,value in engine.statistics.items() if isinstance(value,(int,float))}
+    result['metadata']['evaluation_fingerprint']=getattr(job['evaluator'],'evaluation_fingerprint',None)
     if callback:
         callback({'event':'island_status','island_status':'stopped' if str(result.get('state','')).startswith('stopped') else 'completed',
                   'stage_name':'completed','field_evaluations':result['metadata']['field_evaluations'],
@@ -395,6 +421,11 @@ def run_islands(topologies, process, limits, search, evaluator, checker, output_
         'stopped_with_completed_records':bool(stopped and records),
         'files': {'result': 'optimization_result.json', 'progress': 'island_progress.json'},
     }
+    statistics={}
+    for run in runs:
+        for key,value in run['metadata'].get('engine_statistics',{}).items():
+            if isinstance(value,(int,float)):statistics[key]=statistics.get(key,0)+value
+    metadata['engine_statistics']=statistics
     result = {'state': ('stopped_with_result' if records else 'stopped_no_result') if stopped else 'budget_exhausted' if used == total else 'scheduled_rounds_finished',
               'baseline': first_baseline, 'records': records, 'pareto': pareto_front(records),
               'diagnostic_best': min(records, key=lambda row: feasibility_score(row['metrics'], requirements))

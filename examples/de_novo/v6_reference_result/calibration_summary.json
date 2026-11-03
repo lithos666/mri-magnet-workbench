@@ -1,0 +1,245 @@
+{
+  "schema": "v6-physics-calibration-1",
+  "design_sha256": "b7ded69f2fd6521677823f33b3a8e1076c442482c1f6e47ed06ec2a6940c4afe",
+  "selected_physics": {
+    "field_model": "coupled",
+    "quadrature_order": 2,
+    "cells_per_axis": 2,
+    "interaction_backend": "analytic_tensor",
+    "residual_tolerance": 1e-10,
+    "prepared_cache_size": 4,
+    "max_unknowns": 3000,
+    "max_matrix_mb": 640.0,
+    "max_magnets": 10000,
+    "chunk_points": 4,
+    "symmetry_reduction": true
+  },
+  "fem_verified": true,
+  "model_accuracy_passed": true,
+  "status": "passed",
+  "scope": "Independent measured profiles on this geometry and domain. Existing q2 optimization scores are unchanged. Applying a new precision requires a new run.",
+  "profiles": [
+    {
+      "cells_per_axis": 1,
+      "quadrature_order": 2,
+      "model_fingerprint": "eda96e4731a59f6b3f77bb5d4a31d1a1bab2ffbc54dfa95253539bbc8da3a722",
+      "status": "completed",
+      "elapsed_seconds": 20.4287202,
+      "model_accuracy_passed": false,
+      "physics": {
+        "field_model": "coupled",
+        "quadrature_order": 2,
+        "cells_per_axis": 1,
+        "interaction_backend": "analytic_tensor",
+        "residual_tolerance": 1e-10,
+        "prepared_cache_size": 4,
+        "max_unknowns": 1200,
+        "max_matrix_mb": 128.0,
+        "max_magnets": 10000,
+        "chunk_points": 48,
+        "symmetry_reduction": true
+      },
+      "metrics": {
+        "mean_norm_T": 0.05226660189302029,
+        "pp_norm_ppm": 128.2360696653133,
+        "n_points": 4103
+      },
+      "comparison": {
+        "python_metrics": {
+          "mean_norm_T": 0.05226660189302029,
+          "min_norm_T": 0.052263495023913656,
+          "max_norm_T": 0.05227019748751518,
+          "delta_norm_T": 6.702463601522546e-06,
+          "pp_norm_ppm": 128.2360696653133,
+          "rms_norm_ppm": 17.655865460257168,
+          "mean_Bz_T": 0.05226660188699294,
+          "pp_Bz_ppm": 128.23602830131932,
+          "center_Bz_T": 0.052266601895867765,
+          "center_norm_T": 0.052266601895867765,
+          "center_Bx_T": -7.120635410652479e-19,
+          "center_By_T": 1.5648933700523199e-19,
+          "max_transverse_T": 3.132746862772635e-06,
+          "n_points": 4103
+        },
+        "fem_metrics": {
+          "mean_norm_T": 0.05226751980632303,
+          "min_norm_T": 0.05226372748677175,
+          "max_norm_T": 0.052272830920573186,
+          "delta_norm_T": 9.103433801435634e-06,
+          "pp_norm_ppm": 174.16999764229013,
+          "rms_norm_ppm": 26.315839748506118,
+          "mean_Bz_T": 0.05226751979366633,
+          "pp_Bz_ppm": 174.16980122147677,
+          "center_Bz_T": 0.05226751980981035,
+          "center_norm_T": 0.05226751980981035,
+          "center_Bx_T": -1.6844130199589072e-13,
+          "center_By_T": -1.9285717616157273e-13,
+          "max_transverse_T": 3.640262675662156e-06,
+          "n_points": 4103
+        },
+        "mean_relative_error": 1.7561830102819087e-05,
+        "ppm_absolute_error": 45.93392797697683,
+        "mean_relative_limit": 0.005,
+        "ppm_error_limit": 17.416999764229015,
+        "max_vector_error_T": 2.8700363708660896e-06,
+        "rms_vector_error_T": 1.1557161935408477e-06,
+        "component_bias_T": [
+          -1.3519847741812215e-10,
+          2.6326969190017534e-10,
+          -9.1790667337823e-07
+        ],
+        "accuracy_passed": false,
+        "scope": "same frozen samples and volume weights; convergence evaluated separately"
+      }
+    },
+    {
+      "cells_per_axis": 1,
+      "quadrature_order": 3,
+      "model_fingerprint": "f173870434049cdbf1bb03124334f05a6c8ed508cad31b3d42d2c1ef21de89b2",
+      "status": "completed",
+      "elapsed_seconds": 34.571179900000004,
+      "model_accuracy_passed": false,
+      "physics": {
+        "field_model": "coupled",
+        "quadrature_order": 3,
+        "cells_per_axis": 1,
+        "interaction_backend": "analytic_tensor",
+        "residual_tolerance": 1e-10,
+        "prepared_cache_size": 4,
+        "max_unknowns": 1200,
+        "max_matrix_mb": 128.0,
+        "max_magnets": 10000,
+        "chunk_points": 48,
+        "symmetry_reduction": true
+      },
+      "metrics": {
+        "mean_norm_T": 0.052266431474861444,
+        "pp_norm_ppm": 131.36544517447396,
+        "n_points": 4103
+      },
+      "comparison": {
+        "python_metrics": {
+          "mean_norm_T": 0.052266431474861444,
+          "min_norm_T": 0.05226326533221279,
+          "max_norm_T": 0.052270131335251165,
+          "delta_norm_T": 6.8660030383763115e-06,
+          "pp_norm_ppm": 131.36544517447396,
+          "rms_norm_ppm": 18.330229204234573,
+          "mean_Bz_T": 0.05226643146841035,
+          "pp_Bz_ppm": 131.3654039374948,
+          "center_Bz_T": 0.05226643147802448,
+          "center_norm_T": 0.05226643147802448,
+          "center_Bx_T": -3.9228213369714784e-20,
+          "center_By_T": 8.809142651444724e-20,
+          "max_transverse_T": 3.195411326843417e-06,
+          "n_points": 4103
+        },
+        "fem_metrics": {
+          "mean_norm_T": 0.05226751980632303,
+          "min_norm_T": 0.05226372748677175,
+          "max_norm_T": 0.052272830920573186,
+          "delta_norm_T": 9.103433801435634e-06,
+          "pp_norm_ppm": 174.16999764229013,
+          "rms_norm_ppm": 26.315839748506118,
+          "mean_Bz_T": 0.05226751979366633,
+          "pp_Bz_ppm": 174.16980122147677,
+          "center_Bz_T": 0.05226751980981035,
+          "center_norm_T": 0.05226751980981035,
+          "center_Bx_T": -1.6844130199589072e-13,
+          "center_By_T": -1.9285717616157273e-13,
+          "max_transverse_T": 3.640262675662156e-06,
+          "n_points": 4103
+        },
+        "mean_relative_error": 2.0822328390845968e-05,
+        "ppm_absolute_error": 42.804552467816166,
+        "mean_relative_limit": 0.005,
+        "ppm_error_limit": 17.416999764229015,
+        "max_vector_error_T": 2.92105614188154e-06,
+        "rms_vector_error_T": 1.2697229716744463e-06,
+        "component_bias_T": [
+          -1.2429855916083279e-10,
+          2.5448154944169596e-10,
+          -1.0883252559728885e-06
+        ],
+        "accuracy_passed": false,
+        "scope": "same frozen samples and volume weights; convergence evaluated separately"
+      }
+    },
+    {
+      "cells_per_axis": 2,
+      "quadrature_order": 2,
+      "model_fingerprint": "1abd551c7177f93a47a28cb2d7042745eb6b8c2b3c7ad7f749b614d169103e81",
+      "status": "completed",
+      "elapsed_seconds": 395.7790528,
+      "model_accuracy_passed": true,
+      "physics": {
+        "field_model": "coupled",
+        "quadrature_order": 2,
+        "cells_per_axis": 2,
+        "interaction_backend": "analytic_tensor",
+        "residual_tolerance": 1e-10,
+        "prepared_cache_size": 4,
+        "max_unknowns": 3000,
+        "max_matrix_mb": 640.0,
+        "max_magnets": 10000,
+        "chunk_points": 4,
+        "symmetry_reduction": true
+      },
+      "metrics": {
+        "mean_norm_T": 0.052263748385548925,
+        "pp_norm_ppm": 158.06005552421223,
+        "n_points": 4103
+      },
+      "comparison": {
+        "python_metrics": {
+          "mean_norm_T": 0.052263748385548925,
+          "min_norm_T": 0.052260221171498505,
+          "max_norm_T": 0.05226848198247023,
+          "delta_norm_T": 8.26081097172332e-06,
+          "pp_norm_ppm": 158.06005552421223,
+          "rms_norm_ppm": 23.014997123331305,
+          "mean_Bz_T": 0.05226374837573795,
+          "pp_Bz_ppm": 158.0599005018372,
+          "center_Bz_T": 0.05226374838887274,
+          "center_norm_T": 0.05226374838887274,
+          "center_Bx_T": -5.025717791300681e-19,
+          "center_By_T": -3.053024379259719e-19,
+          "max_transverse_T": 3.3205058520610226e-06,
+          "n_points": 4103
+        },
+        "fem_metrics": {
+          "mean_norm_T": 0.05226751980632303,
+          "min_norm_T": 0.05226372748677175,
+          "max_norm_T": 0.052272830920573186,
+          "delta_norm_T": 9.103433801435634e-06,
+          "pp_norm_ppm": 174.16999764229013,
+          "rms_norm_ppm": 26.315839748506118,
+          "mean_Bz_T": 0.05226751979366633,
+          "pp_Bz_ppm": 174.16980122147677,
+          "center_Bz_T": 0.05226751980981035,
+          "center_norm_T": 0.05226751980981035,
+          "center_Bx_T": -1.6844130199589072e-13,
+          "center_By_T": -1.9285717616157273e-13,
+          "max_transverse_T": 3.640262675662156e-06,
+          "n_points": 4103
+        },
+        "mean_relative_error": 7.215610742727918e-05,
+        "ppm_absolute_error": 16.109942118077896,
+        "mean_relative_limit": 0.005,
+        "ppm_error_limit": 17.416999764229015,
+        "max_vector_error_T": 4.411007376385932e-06,
+        "rms_vector_error_T": 3.779468088546221e-06,
+        "component_bias_T": [
+          -4.6991382930605015e-11,
+          8.09794778805458e-11,
+          -3.771417928365751e-06
+        ],
+        "accuracy_passed": true,
+        "scope": "same frozen samples and volume weights; convergence evaluated separately"
+      }
+    }
+  ],
+  "source_report_sha256": "f387314f1e91020aeffa463c09ccc3e4c166d7dc38681d0ab251ada6a49f88ee",
+  "not_used_for_archived_optimization": true,
+  "additional_high_precision_optimization_status": "not_completed_in_this_archived_run"
+}

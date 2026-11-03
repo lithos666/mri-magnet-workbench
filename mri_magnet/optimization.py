@@ -167,6 +167,8 @@ def _run_optimization_impl(variables, build_design, evaluate_design, validate_de
     else:initial=original_initial.copy()
     dimensions = int(np.count_nonzero(low < high))
     cache = {} if numeric_cache is None else numeric_cache
+    evaluation_namespace=getattr(evaluate_design,'evaluation_fingerprint','')
+    if callable(evaluation_namespace):evaluation_namespace=evaluation_namespace()
     counters = dict(field_evaluations=0, proposal_calls=0, cache_hits=0, infeasible_proposals=0,
                     build_failures=0, evaluation_failures=0)
     records, logs, local_by_physical, vector_cache, field_cache = [], [], {}, {}, {}
@@ -236,6 +238,19 @@ def _run_optimization_impl(variables, build_design, evaluate_design, validate_de
         def rejection(vector, reason, notes):
             write(rejected_stream, {'parameters': pars(vector), 'reason': reason, 'violations': notes})
 
+        def completed_evaluation():
+            nonlocal callback_active
+            # Legacy callbacks receive design-bearing events only. The V6
+            # workbench explicitly opts into lightweight progress messages.
+            if not callback_active or not getattr(evaluate_design,'emit_evaluation_progress',False):return
+            try:
+                event_callback({'event':'evaluation_progress','phase':phase,'stage_name':phase,
+                    'field_evaluations':counters['field_evaluations'],
+                    'global_evaluations':global_evaluation_offset+counters['field_evaluations'],
+                    'topology_index':topology_index})
+            except Exception as error:
+                callback_active=False;monitor_errors.append(str(error))
+
         def visit(design, vector, baseline=False):
             nonlocal best_recorded_score
             check_stop()
@@ -244,10 +259,11 @@ def _run_optimization_impl(variables, build_design, evaluate_design, validate_de
                 counters['infeasible_proposals'] += 1
                 rejection(vector, 'geometry_constraint', valid.get('violations', [])); return None
             physical = _design_key(design)
+            numeric_key=(str(evaluation_namespace)+':'+physical) if evaluation_namespace else physical
             if physical in local_by_physical:
                 counters['cache_hits'] += 1; return local_by_physical[physical]
-            if physical in cache:
-                counters['cache_hits'] += 1; metrics = dict(cache[physical])
+            if numeric_key in cache:
+                counters['cache_hits'] += 1; metrics = dict(cache[numeric_key])
             else:
                 if counters['field_evaluations'] >= active_budget: raise _BudgetReached()
                 counters['field_evaluations'] += 1
@@ -264,12 +280,15 @@ def _run_optimization_impl(variables, build_design, evaluate_design, validate_de
                         raise ValueError('Invalid field metrics')
                 except Exception as error:
                     counters['evaluation_failures'] += 1
+                    completed_evaluation()
                     rejection(vector, 'evaluation_error', [str(error)]); return None
-                cache[physical] = dict(metrics)
+                cache[numeric_key] = dict(metrics)
+                completed_evaluation()
             performance = check_performance(metrics, requirements)
             ident = candidate_prefix+('baseline' if baseline else 'candidate_%06d' % len(records))
             row = {'candidate_id': ident, 'parameters': pars(vector), 'design': _design_dict(design),
-                   'metrics': metrics, 'geometry_feasible': True, 'performance_check': performance,
+                   'metrics': metrics, 'evaluation_fingerprint':evaluation_namespace,
+                   'geometry_feasible': True, 'performance_check': performance,
                    'feasible': performance['valid'], 'canonical_physical_sha256': physical,
                    'raw_design_sha256': raw_design_sha256(_design_dict(design)),
                    'search_stage':phase,'field_evaluations':counters['field_evaluations'],

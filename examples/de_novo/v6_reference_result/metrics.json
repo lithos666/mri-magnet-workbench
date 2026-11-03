@@ -1,0 +1,491 @@
+{
+  "mode": "de_novo",
+  "source_layout_loaded": false,
+  "target": {
+    "geometry": "sphere",
+    "diameter_mm": 100.0,
+    "z_mm": 0.0,
+    "min_field_mT": 40.0,
+    "max_ppm": null
+  },
+  "magnet": {
+    "cube_mm": 12.0,
+    "remanence_T": 1.43,
+    "reference_mur": 1.05
+  },
+  "physics": {
+    "field_model": "coupled",
+    "quadrature_order": 2,
+    "cells_per_axis": 1,
+    "interaction_backend": "analytic_tensor",
+    "residual_tolerance": 1e-10,
+    "prepared_cache_size": 4,
+    "max_unknowns": 1200,
+    "max_matrix_mb": 128.0,
+    "max_magnets": 10000,
+    "chunk_points": 48,
+    "symmetry_reduction": true
+  },
+  "seed": 20261101,
+  "global_optimum_proven": false,
+  "metric_scope": "正式耦合模型，4103点全局密集复核及连续极值细化；FEM逐点指标另列。",
+  "budget": {
+    "limit": 2400,
+    "charged": 2290,
+    "ledger": [
+      {
+        "island": 1,
+        "round": 1,
+        "charged_evaluations": 240,
+        "interrupted": false,
+        "unfinished_charge": 0
+      },
+      {
+        "island": 2,
+        "round": 1,
+        "charged_evaluations": 240,
+        "interrupted": false,
+        "unfinished_charge": 0
+      },
+      {
+        "island": 3,
+        "round": 1,
+        "charged_evaluations": 240,
+        "interrupted": false,
+        "unfinished_charge": 0
+      },
+      {
+        "island": 1,
+        "round": 2,
+        "charged_evaluations": 572,
+        "interrupted": true,
+        "unfinished_charge": 1
+      },
+      {
+        "island": 1,
+        "round": 2,
+        "charged_evaluations": 197,
+        "interrupted": false,
+        "unfinished_charge": 0
+      },
+      {
+        "island": 2,
+        "round": 2,
+        "charged_evaluations": 801,
+        "interrupted": false,
+        "unfinished_charge": 0
+      }
+    ],
+    "resumed_after_interruption": true,
+    "audited_pre_interruption_charged_evaluations": 1292,
+    "continuation": "保留物理精英和已用预算后重启后续阶段；不是随机数状态精确续跑。"
+  },
+  "recommendations": [
+    {
+      "role": "balanced",
+      "candidate_id": "resume_i01_candidate_000196",
+      "design_sha256": "b7ded69f2fd6521677823f33b3a8e1076c442482c1f6e47ed06ec2a6940c4afe",
+      "metrics": {
+        "mean_norm_T": 0.05226660189302029,
+        "pp_norm_ppm": 128.2361850066006,
+        "sampled_pp_norm_ppm": 128.2360696653133,
+        "magnet_count": 3456,
+        "n_points": 4103,
+        "pointset": "sphere_D100_V2048_S2048_seed20361104",
+        "field_model": "coupled_uniform_cells",
+        "polarization_model": "coupled_uniform_cells",
+        "integration_measure": "volume",
+        "evaluation_geometry": "sphere",
+        "evaluation_diameter_mm": 100.0,
+        "model_fingerprint": "eda96e4731a59f6b3f77bb5d4a31d1a1bab2ffbc54dfa95253539bbc8da3a722",
+        "evaluation_fingerprint": "8469a916b9b67dd8036eb11c4b9fea7ef60efbce833fee745ac45b45b3ef5118"
+      },
+      "design_file": "balanced_design.json",
+      "physics_status": {
+        "model_accuracy_passed": false,
+        "fem_verified": true
+      }
+    },
+    {
+      "role": "high_field",
+      "candidate_id": "i01_r01_candidate_000094",
+      "design_sha256": "c772b6c0d33841c1f582d7cb51bf81a8a48d92129b81cfb9e42621eb27cfbcb2",
+      "metrics": {
+        "mean_norm_T": 0.060921059215037154,
+        "pp_norm_ppm": 133041.2564325319,
+        "sampled_pp_norm_ppm": 133041.2564325319,
+        "magnet_count": 3456,
+        "n_points": 4103,
+        "pointset": "sphere_D100_V2048_S2048_seed20361104",
+        "field_model": "coupled_uniform_cells",
+        "polarization_model": "coupled_uniform_cells",
+        "integration_measure": "volume",
+        "evaluation_geometry": "sphere",
+        "evaluation_diameter_mm": 100.0,
+        "model_fingerprint": "eda96e4731a59f6b3f77bb5d4a31d1a1bab2ffbc54dfa95253539bbc8da3a722",
+        "evaluation_fingerprint": "8469a916b9b67dd8036eb11c4b9fea7ef60efbce833fee745ac45b45b3ef5118"
+      },
+      "design_file": "high_field_design.json",
+      "physics_status": {
+        "model_accuracy_passed": false,
+        "fem_verified": false
+      }
+    },
+    {
+      "role": "lowest_ppm",
+      "candidate_id": "resume_i02_candidate_000730",
+      "design_sha256": "45a0eae92a1c0f59ddb8255d9aef11ee73844effc59ad4dfa91acc86560eab61",
+      "metrics": {
+        "mean_norm_T": 0.04463629050185429,
+        "pp_norm_ppm": 107.05497162478665,
+        "sampled_pp_norm_ppm": 107.05491975162239,
+        "magnet_count": 3248,
+        "n_points": 4103,
+        "pointset": "sphere_D100_V2048_S2048_seed20361104",
+        "field_model": "coupled_uniform_cells",
+        "polarization_model": "coupled_uniform_cells",
+        "integration_measure": "volume",
+        "evaluation_geometry": "sphere",
+        "evaluation_diameter_mm": 100.0,
+        "model_fingerprint": "eda96e4731a59f6b3f77bb5d4a31d1a1bab2ffbc54dfa95253539bbc8da3a722",
+        "evaluation_fingerprint": "8469a916b9b67dd8036eb11c4b9fea7ef60efbce833fee745ac45b45b3ef5118"
+      },
+      "design_file": "lowest_ppm_design.json",
+      "physics_status": {
+        "model_accuracy_passed": false,
+        "fem_verified": false
+      }
+    }
+  ],
+  "legacy_same_coupled_model": [
+    {
+      "candidate_id": "i01_r02_candidate_000768",
+      "design_sha256": "82c31b91f5d5b51fa4eea49a0fd8be7fffc359e9b37bbc36cac5f0dc16b1dae6",
+      "role": "balanced",
+      "metrics": {
+        "mean_norm_T": 0.050779529987131575,
+        "pp_norm_ppm": 639.5680507892496,
+        "sampled_pp_norm_ppm": 639.5680506676333,
+        "magnet_count": 3456,
+        "n_points": 4103,
+        "pointset": "sphere_D100_V2048_S2048_seed20361104",
+        "field_model": "coupled_uniform_cells",
+        "polarization_model": "coupled_uniform_cells",
+        "integration_measure": "volume",
+        "evaluation_geometry": "sphere",
+        "evaluation_diameter_mm": 100.0,
+        "model_fingerprint": "eda96e4731a59f6b3f77bb5d4a31d1a1bab2ffbc54dfa95253539bbc8da3a722",
+        "evaluation_fingerprint": "8469a916b9b67dd8036eb11c4b9fea7ef60efbce833fee745ac45b45b3ef5118"
+      }
+    },
+    {
+      "candidate_id": "i01_r01_candidate_000094",
+      "design_sha256": "c772b6c0d33841c1f582d7cb51bf81a8a48d92129b81cfb9e42621eb27cfbcb2",
+      "role": "high_field",
+      "metrics": {
+        "mean_norm_T": 0.060921059215037154,
+        "pp_norm_ppm": 133041.2564325319,
+        "sampled_pp_norm_ppm": 133041.2564325319,
+        "magnet_count": 3456,
+        "n_points": 4103,
+        "pointset": "sphere_D100_V2048_S2048_seed20361104",
+        "field_model": "coupled_uniform_cells",
+        "polarization_model": "coupled_uniform_cells",
+        "integration_measure": "volume",
+        "evaluation_geometry": "sphere",
+        "evaluation_diameter_mm": 100.0,
+        "model_fingerprint": "eda96e4731a59f6b3f77bb5d4a31d1a1bab2ffbc54dfa95253539bbc8da3a722",
+        "evaluation_fingerprint": "8469a916b9b67dd8036eb11c4b9fea7ef60efbce833fee745ac45b45b3ef5118"
+      }
+    },
+    {
+      "candidate_id": "i03_r02_candidate_000792",
+      "design_sha256": "6cb2148fb2ea569dd1d23165e01a068e73ee6e415b17a4a7164b40c58234ad06",
+      "role": "lowest_ppm",
+      "metrics": {
+        "mean_norm_T": 0.04612100918648135,
+        "pp_norm_ppm": 421.5284131625702,
+        "sampled_pp_norm_ppm": 421.5272509423802,
+        "magnet_count": 3540,
+        "n_points": 4103,
+        "pointset": "sphere_D100_V2048_S2048_seed20361104",
+        "field_model": "coupled_uniform_cells",
+        "polarization_model": "coupled_uniform_cells",
+        "integration_measure": "volume",
+        "evaluation_geometry": "sphere",
+        "evaluation_diameter_mm": 100.0,
+        "model_fingerprint": "eda96e4731a59f6b3f77bb5d4a31d1a1bab2ffbc54dfa95253539bbc8da3a722",
+        "evaluation_fingerprint": "8469a916b9b67dd8036eb11c4b9fea7ef60efbce833fee745ac45b45b3ef5118"
+      }
+    }
+  ],
+  "material_scope": "Br=1.43T、mur=1.05线性回复；未导入该批磁铁的实测J-H曲线，不含不可逆退磁。",
+  "fem_status": {
+    "status": "fem_converged_model_accuracy_not_passed",
+    "fem_verified": true,
+    "model_accuracy_passed": false,
+    "mesh_converged": true,
+    "boundary_converged": true
+  },
+  "converged_fem_comparison": {
+    "sample_fingerprint": "17229d57037ea74024cf2fd1f2d3ea9431b755baf491c8b728c20c1b2bd2788b",
+    "scope": "同一4103点、体积权重与线性材料关系；两方案分别完成三级网格及扩大外空气域收敛检查。FEM采样极值未作连续全局极值证明。",
+    "legacy_balanced": {
+      "mean_norm_T": 0.05078230517238926,
+      "pp_norm_ppm": 600.4050760582926,
+      "n_points": 4103
+    },
+    "v6_balanced": {
+      "mean_norm_T": 0.05226751980632303,
+      "pp_norm_ppm": 174.16999764229013,
+      "n_points": 4103
+    },
+    "mean_gain_percent": 2.9246695849901805,
+    "ppm_reduction_percent": 70.99125164201973
+  },
+  "separate_precision_calibration": {
+    "schema": "v6-physics-calibration-1",
+    "design_sha256": "b7ded69f2fd6521677823f33b3a8e1076c442482c1f6e47ed06ec2a6940c4afe",
+    "selected_physics": {
+      "field_model": "coupled",
+      "quadrature_order": 2,
+      "cells_per_axis": 2,
+      "interaction_backend": "analytic_tensor",
+      "residual_tolerance": 1e-10,
+      "prepared_cache_size": 4,
+      "max_unknowns": 3000,
+      "max_matrix_mb": 640.0,
+      "max_magnets": 10000,
+      "chunk_points": 4,
+      "symmetry_reduction": true
+    },
+    "fem_verified": true,
+    "model_accuracy_passed": true,
+    "status": "passed",
+    "scope": "Independent measured profiles on this geometry and domain. Existing q2 optimization scores are unchanged. Applying a new precision requires a new run.",
+    "profiles": [
+      {
+        "cells_per_axis": 1,
+        "quadrature_order": 2,
+        "model_fingerprint": "eda96e4731a59f6b3f77bb5d4a31d1a1bab2ffbc54dfa95253539bbc8da3a722",
+        "status": "completed",
+        "elapsed_seconds": 20.4287202,
+        "model_accuracy_passed": false,
+        "physics": {
+          "field_model": "coupled",
+          "quadrature_order": 2,
+          "cells_per_axis": 1,
+          "interaction_backend": "analytic_tensor",
+          "residual_tolerance": 1e-10,
+          "prepared_cache_size": 4,
+          "max_unknowns": 1200,
+          "max_matrix_mb": 128.0,
+          "max_magnets": 10000,
+          "chunk_points": 48,
+          "symmetry_reduction": true
+        },
+        "metrics": {
+          "mean_norm_T": 0.05226660189302029,
+          "pp_norm_ppm": 128.2360696653133,
+          "n_points": 4103
+        },
+        "comparison": {
+          "python_metrics": {
+            "mean_norm_T": 0.05226660189302029,
+            "min_norm_T": 0.052263495023913656,
+            "max_norm_T": 0.05227019748751518,
+            "delta_norm_T": 6.702463601522546e-06,
+            "pp_norm_ppm": 128.2360696653133,
+            "rms_norm_ppm": 17.655865460257168,
+            "mean_Bz_T": 0.05226660188699294,
+            "pp_Bz_ppm": 128.23602830131932,
+            "center_Bz_T": 0.052266601895867765,
+            "center_norm_T": 0.052266601895867765,
+            "center_Bx_T": -7.120635410652479e-19,
+            "center_By_T": 1.5648933700523199e-19,
+            "max_transverse_T": 3.132746862772635e-06,
+            "n_points": 4103
+          },
+          "fem_metrics": {
+            "mean_norm_T": 0.05226751980632303,
+            "min_norm_T": 0.05226372748677175,
+            "max_norm_T": 0.052272830920573186,
+            "delta_norm_T": 9.103433801435634e-06,
+            "pp_norm_ppm": 174.16999764229013,
+            "rms_norm_ppm": 26.315839748506118,
+            "mean_Bz_T": 0.05226751979366633,
+            "pp_Bz_ppm": 174.16980122147677,
+            "center_Bz_T": 0.05226751980981035,
+            "center_norm_T": 0.05226751980981035,
+            "center_Bx_T": -1.6844130199589072e-13,
+            "center_By_T": -1.9285717616157273e-13,
+            "max_transverse_T": 3.640262675662156e-06,
+            "n_points": 4103
+          },
+          "mean_relative_error": 1.7561830102819087e-05,
+          "ppm_absolute_error": 45.93392797697683,
+          "mean_relative_limit": 0.005,
+          "ppm_error_limit": 17.416999764229015,
+          "max_vector_error_T": 2.8700363708660896e-06,
+          "rms_vector_error_T": 1.1557161935408477e-06,
+          "component_bias_T": [
+            -1.3519847741812215e-10,
+            2.6326969190017534e-10,
+            -9.1790667337823e-07
+          ],
+          "accuracy_passed": false,
+          "scope": "same frozen samples and volume weights; convergence evaluated separately"
+        }
+      },
+      {
+        "cells_per_axis": 1,
+        "quadrature_order": 3,
+        "model_fingerprint": "f173870434049cdbf1bb03124334f05a6c8ed508cad31b3d42d2c1ef21de89b2",
+        "status": "completed",
+        "elapsed_seconds": 34.571179900000004,
+        "model_accuracy_passed": false,
+        "physics": {
+          "field_model": "coupled",
+          "quadrature_order": 3,
+          "cells_per_axis": 1,
+          "interaction_backend": "analytic_tensor",
+          "residual_tolerance": 1e-10,
+          "prepared_cache_size": 4,
+          "max_unknowns": 1200,
+          "max_matrix_mb": 128.0,
+          "max_magnets": 10000,
+          "chunk_points": 48,
+          "symmetry_reduction": true
+        },
+        "metrics": {
+          "mean_norm_T": 0.052266431474861444,
+          "pp_norm_ppm": 131.36544517447396,
+          "n_points": 4103
+        },
+        "comparison": {
+          "python_metrics": {
+            "mean_norm_T": 0.052266431474861444,
+            "min_norm_T": 0.05226326533221279,
+            "max_norm_T": 0.052270131335251165,
+            "delta_norm_T": 6.8660030383763115e-06,
+            "pp_norm_ppm": 131.36544517447396,
+            "rms_norm_ppm": 18.330229204234573,
+            "mean_Bz_T": 0.05226643146841035,
+            "pp_Bz_ppm": 131.3654039374948,
+            "center_Bz_T": 0.05226643147802448,
+            "center_norm_T": 0.05226643147802448,
+            "center_Bx_T": -3.9228213369714784e-20,
+            "center_By_T": 8.809142651444724e-20,
+            "max_transverse_T": 3.195411326843417e-06,
+            "n_points": 4103
+          },
+          "fem_metrics": {
+            "mean_norm_T": 0.05226751980632303,
+            "min_norm_T": 0.05226372748677175,
+            "max_norm_T": 0.052272830920573186,
+            "delta_norm_T": 9.103433801435634e-06,
+            "pp_norm_ppm": 174.16999764229013,
+            "rms_norm_ppm": 26.315839748506118,
+            "mean_Bz_T": 0.05226751979366633,
+            "pp_Bz_ppm": 174.16980122147677,
+            "center_Bz_T": 0.05226751980981035,
+            "center_norm_T": 0.05226751980981035,
+            "center_Bx_T": -1.6844130199589072e-13,
+            "center_By_T": -1.9285717616157273e-13,
+            "max_transverse_T": 3.640262675662156e-06,
+            "n_points": 4103
+          },
+          "mean_relative_error": 2.0822328390845968e-05,
+          "ppm_absolute_error": 42.804552467816166,
+          "mean_relative_limit": 0.005,
+          "ppm_error_limit": 17.416999764229015,
+          "max_vector_error_T": 2.92105614188154e-06,
+          "rms_vector_error_T": 1.2697229716744463e-06,
+          "component_bias_T": [
+            -1.2429855916083279e-10,
+            2.5448154944169596e-10,
+            -1.0883252559728885e-06
+          ],
+          "accuracy_passed": false,
+          "scope": "same frozen samples and volume weights; convergence evaluated separately"
+        }
+      },
+      {
+        "cells_per_axis": 2,
+        "quadrature_order": 2,
+        "model_fingerprint": "1abd551c7177f93a47a28cb2d7042745eb6b8c2b3c7ad7f749b614d169103e81",
+        "status": "completed",
+        "elapsed_seconds": 395.7790528,
+        "model_accuracy_passed": true,
+        "physics": {
+          "field_model": "coupled",
+          "quadrature_order": 2,
+          "cells_per_axis": 2,
+          "interaction_backend": "analytic_tensor",
+          "residual_tolerance": 1e-10,
+          "prepared_cache_size": 4,
+          "max_unknowns": 3000,
+          "max_matrix_mb": 640.0,
+          "max_magnets": 10000,
+          "chunk_points": 4,
+          "symmetry_reduction": true
+        },
+        "metrics": {
+          "mean_norm_T": 0.052263748385548925,
+          "pp_norm_ppm": 158.06005552421223,
+          "n_points": 4103
+        },
+        "comparison": {
+          "python_metrics": {
+            "mean_norm_T": 0.052263748385548925,
+            "min_norm_T": 0.052260221171498505,
+            "max_norm_T": 0.05226848198247023,
+            "delta_norm_T": 8.26081097172332e-06,
+            "pp_norm_ppm": 158.06005552421223,
+            "rms_norm_ppm": 23.014997123331305,
+            "mean_Bz_T": 0.05226374837573795,
+            "pp_Bz_ppm": 158.0599005018372,
+            "center_Bz_T": 0.05226374838887274,
+            "center_norm_T": 0.05226374838887274,
+            "center_Bx_T": -5.025717791300681e-19,
+            "center_By_T": -3.053024379259719e-19,
+            "max_transverse_T": 3.3205058520610226e-06,
+            "n_points": 4103
+          },
+          "fem_metrics": {
+            "mean_norm_T": 0.05226751980632303,
+            "min_norm_T": 0.05226372748677175,
+            "max_norm_T": 0.052272830920573186,
+            "delta_norm_T": 9.103433801435634e-06,
+            "pp_norm_ppm": 174.16999764229013,
+            "rms_norm_ppm": 26.315839748506118,
+            "mean_Bz_T": 0.05226751979366633,
+            "pp_Bz_ppm": 174.16980122147677,
+            "center_Bz_T": 0.05226751980981035,
+            "center_norm_T": 0.05226751980981035,
+            "center_Bx_T": -1.6844130199589072e-13,
+            "center_By_T": -1.9285717616157273e-13,
+            "max_transverse_T": 3.640262675662156e-06,
+            "n_points": 4103
+          },
+          "mean_relative_error": 7.215610742727918e-05,
+          "ppm_absolute_error": 16.109942118077896,
+          "mean_relative_limit": 0.005,
+          "ppm_error_limit": 17.416999764229015,
+          "max_vector_error_T": 4.411007376385932e-06,
+          "rms_vector_error_T": 3.779468088546221e-06,
+          "component_bias_T": [
+            -4.6991382930605015e-11,
+            8.09794778805458e-11,
+            -3.771417928365751e-06
+          ],
+          "accuracy_passed": true,
+          "scope": "same frozen samples and volume weights; convergence evaluated separately"
+        }
+      }
+    ],
+    "source_report_sha256": "f387314f1e91020aeffa463c09ccc3e4c166d7dc38681d0ab251ada6a49f88ee",
+    "not_used_for_archived_optimization": true,
+    "additional_high_precision_optimization_status": "not_completed_in_this_archived_run"
+  }
+}

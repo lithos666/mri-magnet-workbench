@@ -41,11 +41,19 @@ DEFAULTS = {
         "active_set_evaluations":240,"active_set_trust_radius":.03,"active_set_fd_step":.002},
     "evolution": {"enabled": True, "grid_points": 21, "max_frames": 24,
         "min_refresh_seconds": 5., "generation_interval": 1, "gif_duration_ms": 650},
-    "deliverables": {"compile": True, "runtime_validate": False, "air_radius_mm": 650.,
+    "deliverables": {"compile": True, "runtime_validate": False, "air_radius_mm": 3000.,
         "air_mu_r": 1., "mesh_size": 5, "timeout_seconds": 300, "class_prefix": "MRI_Design"},
     "comsol_root": "D:/comsol/COMSOL62/Multiphysics",
     "chunk_points": 96, "polarization_model": "remanence", "density_kg_m3": 7500.,
+    "physics": {"field_model": "coupled", "quadrature_order": 2, "cells_per_axis": 1,
+        "interaction_backend": "analytic_tensor",
+        "residual_tolerance": 1e-10, "prepared_cache_size": 4, "max_unknowns": 1200,
+        "max_matrix_mb": 128., "max_magnets": 10000, "chunk_points": 48,
+        "symmetry_reduction": True},
     "seed": 20261101, "max_validation_candidates": 5,
+    "fem_validation": {"symmetry_mode":"auto", "element_order":3, "air_radius_mm":3000.,
+        "magnet_hmax_mm":4.,"target_hmax_mm":4.,"direct_solver_max_magnets":1,
+        "solver_relative_tolerance":1e-10},
     "analysis": {"slice_grid_size": 21, "integration_volume": 128, "integration_surface": 128,
         "slice_color_limit_ppm": None, "harmonic_max_degree": 8, "max_source_point_pairs": 75000000,
         "mutual_demag": {"enabled": False, "quadrature_order": 1, "max_unknowns": 1200,
@@ -94,6 +102,24 @@ def validate_spec(config):
     for key in ('chunk_points', 'max_validation_candidates'): positive(config.get(key), key, integer=True)
     positive(config.get('density_kg_m3'), 'density_kg_m3')
     if config.get('polarization_model') not in ('remanence', 'isolated_cube_self_demag'): errors.append('未知磁化模型')
+    if 'fem_validation' in config:
+        try:
+            from .comsol_validation import _settings
+            _settings(config['fem_validation'])
+        except (ValueError,TypeError,AttributeError) as error:errors.append('fem_validation: '+str(error))
+    physics=config.get('physics',{'field_model':'legacy'})
+    if not isinstance(physics,dict):
+        errors.append('physics 必须为对象');physics={}
+    if physics.get('field_model','legacy') not in ('coupled','legacy'):errors.append('physics.field_model 必须为 coupled 或 legacy')
+    if physics.get('interaction_backend','analytic_tensor') not in ('analytic_tensor','public_magpylib'):
+        errors.append('physics.interaction_backend 必须为 analytic_tensor 或 public_magpylib')
+    if isinstance(physics.get('quadrature_order',2),bool) or physics.get('quadrature_order',2) not in (1,2,3):errors.append('互耦积分阶数必须为1/2/3')
+    if isinstance(physics.get('cells_per_axis',1),bool) or physics.get('cells_per_axis',1) not in (1,2):errors.append('磁块每轴细分数必须为1或2')
+    for key,default in (('prepared_cache_size',4),('max_unknowns',1200),('max_magnets',10000),('chunk_points',48)):
+        positive(physics.get(key,default),'physics.'+key,integer=True)
+    for key,default in (('residual_tolerance',1e-10),('max_matrix_mb',128.)):
+        positive(physics.get(key,default),'physics.'+key)
+    if not isinstance(physics.get('symmetry_reduction',True),bool):errors.append('physics.symmetry_reduction 必须为布尔值')
     scoring=config.get('scoring',{})
     if scoring.get('mode','ppm') not in ('ppm','balanced'): errors.append('scoring.mode 必须为 ppm 或 balanced')
     for key,default in (('field_gain_scale',.1),('ppm_scale',1000.)):

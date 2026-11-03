@@ -1,5 +1,6 @@
 """Optional bounded planar preview; its field work is separate from search."""
 from pathlib import Path
+from copy import deepcopy
 import json,time,html,os
 from collections import OrderedDict
 import numpy as np
@@ -30,7 +31,14 @@ class EvolutionMonitor:
         self.preview_fields=OrderedDict();self.field_cache_hits=0
         self.max_frames=max(3,int(self.options.get('max_frames',24)))
         self.minimum_seconds=float(self.options.get('min_refresh_seconds',5.))
-        self.engine=FieldEngine(config['chunk_points'],config['polarization_model'],prepared_cache_size=2)
+        self.physics=deepcopy(config.get('physics', {'field_model':'legacy'}))
+        from .field_models import make_field_engine, model_fingerprint
+        self.model_fingerprint=model_fingerprint(config)
+        self.engine=(make_field_engine(config) if self.physics.get('field_model')=='coupled'
+                     else FieldEngine(config['chunk_points'],config['polarization_model'],prepared_cache_size=2))
+        self.model_label=('阵列自洽互耦 · 积分%d阶 · 每轴%d单元' %
+                          (self.physics.get('quadrature_order',2),self.physics.get('cells_per_axis',1))
+                          if self.physics.get('field_model')=='coupled' else '固定源 · '+config['polarization_model'])
         if self.enabled:
             self.folder=self.root/'详细数据'/'演化过程';self.folder.mkdir(parents=True,exist_ok=True)
             self.history_path=self.folder/'history_frames.jsonl'
@@ -51,7 +59,7 @@ class EvolutionMonitor:
 
     def _remember(self,event):
         selected={k:event[k] for k in ('event','phase','stage_name','topology_index','global_evaluations',
-            'field_evaluations','generation','candidate_id','design','metrics','validation_status','population_metrics','population_scope') if k in event}
+            'field_evaluations','generation','candidate_id','design','metrics','validation_status','population_metrics','population_scope','model_fingerprint') if k in event}
         selected['event_index']=len(self.events);self.events.append(selected)
         with self.history_path.open('a',encoding='utf-8') as stream:
             stream.write(json.dumps(jsonable(selected),ensure_ascii=False,allow_nan=False)+'\n')
@@ -61,6 +69,12 @@ class EvolutionMonitor:
         if not self.enabled or self.error:return
         started=time.perf_counter()
         try:
+            event_model=event.get('model_fingerprint') or event.get('metrics',{}).get('model_fingerprint')
+            if event_model and event_model!=self.model_fingerprint:
+                raise ValueError('演化事件与预览求场模型不同，已停止绘图以避免混用指标')
+            if event.get('prepared_response') is not None and event.get('design'):
+                importer=getattr(self.engine,'import_prepared',None)
+                if callable(importer):importer(Design.from_dict(event['design']),event['prepared_response'])
             event=self._remember(event)
             if not event.get('design') or not event.get('metrics'):return
             if event.get('event') in ('validation','final'):
@@ -91,7 +105,7 @@ class EvolutionMonitor:
         if reference and reference[0] is not self.seed:
             self.seed,self.seed_metrics=reference;self.base_fields=None;self.previous_line=None
         def preview_field(current):
-            key=canonical_physical_sha256(current,getattr(self.engine,'polarization_model','remanence'))
+            key=(canonical_physical_sha256(current),self.model_fingerprint)
             if key in self.preview_fields:
                 self.field_cache_hits+=1;values=self.preview_fields.pop(key);self.preview_fields[key]=values;return values
             values=self.engine.field(current,self.points);self.preview_fields[key]=values
@@ -176,14 +190,16 @@ class EvolutionMonitor:
         fig.suptitle('MRI 演化 · %s · 搜索求场 %s · %.6f mT / %.4f ppm'%(stage,count,mean*1000,metrics['pp_norm_ppm']),fontsize=15)
         scope=('球形 DSV 直径%g mm；截面图仅为预览，极值仍按全域密集复核。'%self.diameter if self.region=='sphere'
             else '所有预览点固定 z=%g mm，直径%g mm。密集复核状态另列。'%(self.z,self.diameter))
-        fig.text(.5,.012,'解析预览额外求场单列统计；'+scope,ha='center',fontsize=8,color='#53657b')
+        fig.text(.5,.012,self.model_label+'；预览额外求场单列统计；'+scope,ha='center',fontsize=8,color='#53657b')
         fig.tight_layout(rect=(0,.035,1,.95))
         frame_path=self.folder/('frame_%04d.png'%self.render_count);fig.savefig(frame_path,dpi=100);plt.close(fig)
         # Replace a completed PNG atomically; an editor never reads a half image.
         preview=self.root/'实时演化看板.png';temporary=self.root/'实时演化看板.tmp.png'
         temporary.write_bytes(frame_path.read_bytes());os.replace(temporary,preview)
         frame={'image':frame_path.relative_to(self.root).as_posix(),'event_index':event['event_index'],
-            'stage':stage,'evaluations':count,'mean_mT':mean*1000,'ppm':metrics['pp_norm_ppm']}
+            'stage':stage,'evaluations':count,'mean_mT':mean*1000,'ppm':metrics['pp_norm_ppm'],
+            'field_model':getattr(self.engine,'polarization_model',self.physics.get('field_model')),
+            'model_fingerprint':self.model_fingerprint}
         if len(self.frames)>=self.max_frames:self.frames[-1]=frame
         else:self.frames.append(frame)
         self.render_count+=1
@@ -213,6 +229,7 @@ class EvolutionMonitor:
             'timeline_file':timeline_file,'history_file':self.history_path.relative_to(self.root).as_posix(),
             'frames_count':len(self.frames),'events_count':len(self.events),'render_count':self.render_count,
             'error':self.error,'preview_engine_statistics':dict(self.engine.statistics),
+            'physics':self.physics,'model_fingerprint':self.model_fingerprint,'model_label':self.model_label,
             'overhead_seconds':self.overhead_seconds,'preview_field_cache_hits':self.field_cache_hits,'max_render_frames':self.max_frames,'preview_cost_excluded_from_search_budget':True,
             'region':{'geometry':self.region,'diameter_mm':self.diameter,'z_mm':self.z},
             'snapshot_not_physical_time':True,'global_extrema_proven':False}
