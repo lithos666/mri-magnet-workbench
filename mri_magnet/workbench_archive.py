@@ -11,8 +11,10 @@ from .de_novo import limits_from_config
 from .geometry import Design
 from .layout import render_rz_layout
 from .manufacturing import audit_manufacturing
-from .objectives import (balanced_components, check_performance, feasibility_score,
-                         pareto_front, pareto_roles, scoring_options)
+from .objectives import balanced_components, feasibility_score, pareto_front, pareto_roles
+from .design_contract import (check_performance, record_metrics as _metrics,
+                              requirements_for as _requirements, record_is_feasible,
+                              valid_record_metrics, eligible_records, preferred_records)
 from .parameterization import topology_identity
 from .serialization import jsonable, save_json
 
@@ -69,26 +71,12 @@ def _fmt(value, digits=4):
     return ("%.*f" % (digits, number)).rstrip("0").rstrip(".") or "0"
 
 
-def _metrics(row):
-    return row.get("validation_metrics") or row.get("dense_metrics") or row.get("metrics") or {}
-
-
 def _domain(config):
     target = config["target"]
     if target["geometry"] == "sphere":
         return "球形 DSV，直径 %s mm，均值按体积积分" % _fmt(target["diameter_mm"])
     return "z=%s mm 平面圆形 FOV，直径 %s mm，均值按面积积分" % (
         _fmt(target.get("z_mm", 0.)), _fmt(target["diameter_mm"]))
-
-
-def _requirements(config):
-    target = config["target"]
-    maximum = target.get('max_ppm')
-    return {"min_mean_norm_T": float(target["min_field_mT"])*1e-3,
-            "max_pp_norm_ppm": None if maximum is None else float(maximum), "field_tolerance_T": 0.,
-            "field_scale_T": max(float(target["min_field_mT"])*1e-3, 1e-12),
-            "ppm_scale": max(float(maximum), 1.) if maximum is not None else 1000.,
-            "scoring": scoring_options(config.get('scoring'))}
 
 
 def _reference_for(row, seeds):
@@ -211,22 +199,26 @@ def archive_run(run_dir, config, seeds, validated_records, optimization_result, 
     requirements = _requirements(config)
     limits = limits_from_config(config)
     records = []
-    for source in validated_records:
+    # Resolve scope aliases before discarding malformed/failed verification.
+    # Otherwise the earlier training row can resurface as the design's result.
+    for source in preferred_records(validated_records):
         row = dict(source)
-        if not row.get("design") or not _metrics(row):
+        if not row.get("design") or not valid_record_metrics(row):
             continue
         design = Design.from_dict(row["design"])
         row["metrics"] = _metrics(row)
         row["performance_check"] = check_performance(row["metrics"], requirements)
         row["manufacturing_check"] = audit_manufacturing(design, config["manufacturing"], limits)
         row["feasible"] = row["performance_check"]["valid"] and row["manufacturing_check"]["valid"]
+        row["feasible"] = record_is_feasible(row, requirements)
         row['physics_status']=physics_status(row,config)
         records.append(row)
     records.sort(key=lambda r: (not r["manufacturing_check"]["valid"],
                                feasibility_score(r["metrics"], requirements),
                                r["metrics"]["pp_norm_ppm"]))
-    roles = pareto_roles(records, requirements)
-    front = pareto_front(records, requirements)
+    eligible = eligible_records(records, requirements)
+    roles = pareto_roles(eligible, requirements)
+    front = pareto_front(eligible, requirements)
     role_labels = {'balanced': '均衡推荐' if requirements['scoring']['mode']=='balanced' else '最优均匀',
                    'high_field': '高场强', 'lowest_ppm': '最低PPM'}
     for row in records:
@@ -471,7 +463,7 @@ def archive_run(run_dir, config, seeds, validated_records, optimization_result, 
               "artifacts": artifacts, "best": best, "candidates": delivered,
               "pareto_recommendations": recommendations,
               "pareto_front_ids": [r.get('candidate_id') for r in front],
-              "scoring": requirements['scoring'],
+              "scoring": requirements['scoring'], "requirements": requirements,
               "fem_verified": bool(best and best['physics_status']['fem_verified']),
               "model_accuracy_passed":bool(best and best['physics_status']['model_accuracy_passed']),
               "physics":dict(config.get('physics') or {'field_model':'legacy'}),"global_optimum_proven": False,

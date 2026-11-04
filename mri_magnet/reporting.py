@@ -12,6 +12,8 @@ from urllib.parse import quote
 
 from .serialization import jsonable as _json_safe
 from .run_overview import best_record, validation_label
+from .objectives import pareto_front
+from .design_contract import check_performance, record_metrics, eligible_records, valid_record_metrics
 
 import matplotlib
 
@@ -491,7 +493,7 @@ def _candidate_rows(payload: Mapping[str, Any]) -> List[Mapping[str, Any]]:
         candidates.insert(0, dict(baseline))
     manufacturing = payload.get("manufacturing", {})
     seed = manufacturing.get("seed_record", {})
-    if seed and seed.get("metrics") and not any(str(row.get("candidate_id")) == str(seed.get("candidate_id", "printable_seed")) for row in candidates):
+    if seed and record_metrics(seed) and not any(str(row.get("candidate_id")) == str(seed.get("candidate_id", "printable_seed")) for row in candidates):
         seed = dict(seed)
         seed.setdefault("candidate_id", "printable_seed")
         candidates.insert(1, seed)
@@ -505,30 +507,21 @@ def _candidate_rows(payload: Mapping[str, Any]) -> List[Mapping[str, Any]]:
                 if not audit.get("valid", False):
                     row["feasible"] = False
     for row in candidates:
+        row['metrics'] = record_metrics(row)
+        if payload.get('requirements') is not None:
+            review = (check_performance(row['metrics'],payload['requirements']) if valid_record_metrics(row)
+                      else {'valid':False,'violations':['invalid field metrics']})
+            if not review['valid']:
+                row['performance_check'] = review
+                row['validation_status'] = {'label':'独立复核未通过','dense_pass':False}
         if row.get("performance_check", {}).get("valid") is False:
             row["feasible"] = False
     return candidates
 
 
-def _pareto_flags(candidates: Sequence[Mapping[str, Any]]) -> np.ndarray:
-    objective = []
-    valid = []
-    for row in candidates:
-        m = row.get("metrics", {})
-        values = [_number(m.get(key)) for key in ("mean_norm_T", "pp_norm_ppm")]
-        manufacturing_check = row.get("manufacturing_check", {})
-        manufacturing_valid = (manufacturing_check.get("valid") is True) if row.get("_manufacturing_review_required") else manufacturing_check.get("valid", True)
-        performance_valid = row.get("performance_check", {}).get("valid", True)
-        valid.append(all(value is not None for value in values) and bool(row.get("feasible", True)) and bool(manufacturing_valid) and bool(performance_valid))
-        objective.append([-(values[0] or 0), values[1] or 0])
-    values = np.asarray(objective, dtype=float)
-    valid_array = np.asarray(valid, dtype=bool)
-    flags = valid_array.copy()
-    for index in np.flatnonzero(valid_array):
-        dominated = valid_array & np.all(values <= values[index], axis=1) & np.any(values < values[index], axis=1)
-        if dominated.any():
-            flags[index] = False
-    return flags
+def _pareto_flags(candidates: Sequence[Mapping[str, Any]], requirements=None) -> np.ndarray:
+    selected = {id(row) for row in pareto_front(eligible_records(candidates,requirements), requirements)}
+    return np.asarray([id(row) in selected for row in candidates], dtype=bool)
 
 
 def _plot_pareto(output_dir: Path, payload: Mapping[str, Any], candidates: Sequence[Mapping[str, Any]]) -> Optional[Path]:
@@ -537,13 +530,13 @@ def _plot_pareto(output_dir: Path, payload: Mapping[str, Any], candidates: Seque
     baseline_id = str(payload.get("baseline", {}).get("candidate_id", "baseline"))
     rows = []
     for index, row in enumerate(candidates):
-        m = row.get("metrics", {})
+        m = record_metrics(row)
         mass, ppm, field = (_number(m.get(key)) for key in ("mass_magnet_kg", "pp_norm_ppm", "mean_norm_T"))
         if None not in (mass, ppm, field):
             rows.append((index, row, mass, ppm, field * 1000))
     if not rows:
         return None
-    pareto = _pareto_flags(candidates)
+    pareto = _pareto_flags(candidates, payload.get('requirements'))
     fig, axes = plt.subplots(1, 2, figsize=(14, 5.8), layout="constrained")
     masses = np.array([r[2] for r in rows])
     ppms = np.array([r[3] for r in rows])
@@ -620,13 +613,13 @@ def _image_section(path: Path, title: str, caption: str = "") -> str:
 def _candidate_table(candidates: Sequence[Mapping[str, Any]], baseline_id: str, payload: Optional[Mapping[str, Any]] = None) -> str:
     if len(candidates) <= 1:
         return "<p>本次未执行候选方案搜索。</p>"
-    pareto = _pareto_flags(candidates)
+    pareto = _pareto_flags(candidates, (payload or {}).get('requirements'))
     chosen = list(enumerate(candidates))
     chosen.sort(key=lambda item: (str(item[1].get("candidate_id")) != baseline_id,
                                   _number(item[1].get("metrics", {}).get("pp_norm_ppm")) or 0))
     rows = []
     for i, row in chosen[:30]:
-        metrics = row.get("metrics", {})
+        metrics = record_metrics(row)
         baseline = str(row.get("candidate_id")) == baseline_id
         deliveries={r.get('id',r.get('candidate_id')):r for r in (payload or {}).get('deliverables',{}).get('candidates',[])}
         export_item=deliveries.get(row.get('candidate_id'),{})
@@ -957,7 +950,7 @@ def create_report(output_dir: Any, payload: Mapping[str, Any], details_dir: Any 
         sections.append(_image_section(pareto, "候选与基准比较", caption))
     baseline_id = str(baseline.get("candidate_id", "baseline"))
     header_record=best_record(payload)
-    header_metrics=header_record.get("validation_metrics") or header_record.get("metrics") or metrics
+    header_metrics=record_metrics(header_record) or metrics
     cards = []
     for key in ("mean_norm_T", "pp_norm_ppm", "mass_magnet_kg", "magnet_count"):
         _, unit, _ = METRIC_LABELS[key]

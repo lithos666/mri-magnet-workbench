@@ -62,10 +62,22 @@ body.split-resizing #workspace-splitter{background:#e6edf3}
 
 .canvas-body.physics-active{display:block;overflow:auto;padding:17px}.engineering-analysis{width:100%;min-width:0}.analysis-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.analysis-heading h3{margin:0;font-size:13px}.analysis-run-options{display:flex;flex-wrap:wrap;gap:8px 14px;margin:12px 0}.analysis-run-options label{display:flex;align-items:center;gap:6px;color:#647d92;font-size:10px}.analysis-status,.analysis-muted{font-size:10px;line-height:1.8;color:#8396a7}.analysis-section{border:1px solid #e3eaf1;border-radius:8px;background:#fbfcfe;padding:13px;margin-top:13px}.analysis-section h4{font-size:11px;color:#5d758a;margin:0 0 10px}.analysis-summary{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.analysis-summary span{border:1px solid #e2e9f0;background:white;padding:8px;border-radius:6px;font:10px var(--mono);color:#54748e}.harmonic-bars{display:grid;gap:9px}.harmonic-bar{display:grid;grid-template-columns:32px minmax(30px,1fr) 90px;align-items:center;gap:8px;font-size:10px}.harmonic-bar i{height:9px;background:#ecf1f5;display:block;border-radius:3px;overflow:hidden}.harmonic-bar b{display:block;height:100%;border-radius:3px}.harmonic-bar strong{font:9px var(--mono);text-align:right;color:#6d8193}.analysis-warnings{font-size:10px;line-height:1.8;color:#9a8059;padding-left:18px}.field-colorbar{position:absolute;right:12px;top:12px;z-index:2;border:1px solid #dfe8ee;background:#ffffffdf;border-radius:7px;padding:8px 10px;font:9px/1.7 var(--mono);color:#6e8191;pointer-events:none;max-width:175px}.field-colorbar i{display:block;height:7px;border-radius:3px;background:linear-gradient(90deg,#2868b3,#f7f9fb,#be3e42);margin:6px 0}.field-colorbar .scale{display:flex;justify-content:space-between;gap:9px}.field-colorbar small{display:block;font:8px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#8a9aa7}.analysis-table{font-size:10px;border-collapse:collapse;width:100%}.analysis-table td,.analysis-table th{padding:7px 5px;text-align:left;border-bottom:1px solid #e9eef3}.analysis-table th{color:#8a9ca9;font-weight:500}.analysis-table td:last-child{font-family:var(--mono)}
 </style>
+<!-- MRI_VERSION_STYLE_START -->
+<style id="version-navigation-style">
+.version-navigation{position:relative;margin:0 0 15px;padding:0 5px;z-index:15}.version-button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 11px;color:#375770;background:#ffffffc9;border:1px solid #dbe5ee;border-radius:9px;text-align:left;font-size:11px;font-weight:600;box-shadow:0 2px 8px #203d5510}.version-button:focus-visible,.version-option:focus-visible{outline:2px solid #6298c3;outline-offset:2px}.version-menu{position:absolute;left:5px;right:5px;top:40px;padding:5px;background:#fffffff5;backdrop-filter:blur(16px);border:1px solid #dae5ee;border-radius:10px;box-shadow:0 8px 26px #203d5521}.version-menu[hidden]{display:none}.version-option{display:block;padding:10px 8px;color:#34556d;text-decoration:none;border-radius:7px;font-size:11px}.version-option:hover,.version-option[aria-current=page]{background:#eaf2f9}.version-option small{display:block;margin-top:4px;color:#8495a5;font-size:9px;font-weight:400}.version-hint{font-size:8px;line-height:1.5;color:#8b9aaa;margin:7px 2px 0}@media(max-width:1000px){.version-navigation{max-width:260px;margin-bottom:12px}.version-menu{right:auto;min-width:250px}.version-hint{font-size:9px}}
+</style>
+<!-- MRI_VERSION_STYLE_END -->
 </head>
 <body>
 <div class="shell">
-<aside><div class="brand"><b>MRI 磁体设计</b><small>SIMULATION WORKBENCH</small></div><div class="nav-presets"><label>PROJECT PRESETS · 工程预设</label><div class="preset-actions" aria-label="快速加载工程预设"><button data-preset="engineering_100mm">100 mm DSV · 16 层工程案例</button><button data-preset="default_20mm">默认 20 mm 球体</button></div></div><div class="tree-label">MODEL BUILDER · 六步模型树</div><nav class="steps" id="step-nav"></nav><div class="nav-bottom">Magpylib 解析求场 · 制造几何审查<br>密集复核 · COMSOL 模型交付<br><br>本地工程，修改配置后须重跑下游工序。</div></aside>
+<aside><!-- MRI_VERSION_MARKUP_START -->
+<div id="version-navigation" class="version-navigation" data-version="v6">
+<button type="button" id="version-menu-button" class="version-button" aria-haspopup="menu" aria-expanded="false" aria-controls="version-menu"><span id="version-current">V6 · 阵列互耦</span><span aria-hidden="true">⌄</span></button>
+<div id="version-menu" class="version-menu" role="menu" hidden>
+<a class="version-option" data-engine="v5" role="menuitem" href="http://127.0.0.1:8764/" target="_blank" rel="noopener">V5 · 固定源<small>独立 V5final 工程 · 无阵列互耦</small></a>
+<a class="version-option" data-engine="v6" role="menuitem" href="http://127.0.0.1:8765/" target="_blank" rel="noopener">V6 · 阵列互耦<small>进入 V6 工作台与运行工程</small></a>
+</div><p class="version-hint">新窗口打开；当前仿真继续运行。</p></div>
+<!-- MRI_VERSION_MARKUP_END --><div class="brand"><b>MRI 磁体设计</b><small>SIMULATION WORKBENCH</small></div><div class="nav-presets"><label>PROJECT PRESETS · 工程预设</label><div class="preset-actions" aria-label="快速加载工程预设"><button data-preset="engineering_100mm">100 mm DSV · 16 层工程案例</button><button data-preset="default_20mm">默认 20 mm 球体</button></div></div><div class="tree-label">MODEL BUILDER · 六步模型树</div><nav class="steps" id="step-nav"></nav><div class="nav-bottom">Magpylib 解析求场 · 制造几何审查<br>密集复核 · COMSOL 模型交付<br><br>本地工程，修改配置后须重跑下游工序。</div></aside>
 <main>
 <div class="top"><div><div class="eyebrow">MRI · ENGINEERING SIMULATION</div><h1 id="page-title">设计模式与性能指标</h1><div class="subtle" id="page-description">定义评价区域与性能门槛，开始一项可追溯的磁体设计。</div></div><div id="connection" class="connection">连接本地工作台…</div></div>
 <div id="notice" class="notice" role="status" hidden></div>
@@ -148,7 +160,7 @@ function renderArtifacts(artifacts){const signature=JSON.stringify(artifacts);if
 function renderRecommendations(next){const entries=next.pareto_recommendations||next.artifacts?.pareto_recommendations||[],box=$('#pareto-recommendations');box.hidden=!entries.length;if(!entries.length){box.innerHTML='';return;}box.innerHTML=entries.map(entry=>{const metrics=entry.metrics||{},path=entry.layout_file||entry.layout,layout=fileURL(path),classFile=fileURL(entry.class_file),javaFile=fileURL(entry.java_file),label=entry.label||({balanced:'均衡推荐',high_field:'高场强',lowest_ppm:'最低PPM'}[entry.role])||entry.role;return `<article class="recommendation previewable${entry.role==='balanced'?' selected':''}${previewSelection?.path===path?' preview-selected':''}" data-preview-layout="${escapeHTML(path||'')}" data-preview-label="${escapeHTML(label)}" data-preview-kind="candidate" data-preview-id="${escapeHTML(entry.candidate_id||entry.role)}" tabindex="0"><header><h4>${escapeHTML(label)}</h4><span class="badge">密集复核 · 帕累托候选</span></header><p>${prettyNumber(metrics.mean_norm_T*1000,5)} mT · ${prettyNumber(metrics.pp_norm_ppm,4)} ppm${metrics.magnet_count!==undefined?' · '+prettyNumber(metrics.magnet_count,0)+' 块':''}</p><p class="subtle">${escapeHTML(globalThis.MRIAnalysis?.candidateVerificationText(entry)||'FEM 待验证 · Python 精度待标定')}</p><nav>${layout?`<button data-preview-layout="${escapeHTML(path)}" data-preview-label="${escapeHTML(label)}" data-preview-kind="candidate">在画布查看布局</button><a href="${layout}" target="_blank">打开原图 ↗</a>`:''}${classFile?`<a href="${classFile}" target="_blank">COMSOL CLASS ↗</a>`:javaFile?`<a href="${javaFile}" target="_blank">COMSOL Java ↗</a>`:''}</nav></article>`;}).join('');}
 function renderFrame(){const index=Number($('#timeline-slider').value),frame=frames[index];if(!frame)return;$('#timeline-image').src=fileURL(frame.path);$('#timeline-label').textContent='第 '+(index+1)+' / '+frames.length+' 帧 · '+(stageNames[frame.stage]||frame.stage||'演化快照')+' · 求场 '+prettyNumber(frame.evaluations,0)+' · '+prettyNumber(frame.mean_mT,6)+' mT / '+prettyNumber(frame.ppm,4)+' ppm';if(state&&currentView==='evolution')renderCanvas(state);}
 $('#timeline-slider').oninput=()=>{timelinePinned=true;currentView='evolution';renderFrame();};$('#timeline-follow').onclick=()=>{timelinePinned=false;$('#timeline-slider').value=Math.max(0,frames.length-1);currentView='evolution';renderFrame();};
-function render(next){state=next;if(!dirty){config=structuredClone(next.config||config);fillForm();}const statusText={pending:'待运行',passed:'通过',error:'冲突 / 失败',running:'运行中',stopped_with_result:'已停止 · 最优解已保存'};for(const step of next.steps||[]){const n=step.number;const element=$(`[data-status="${n}"]`);if(element){element.textContent=statusText[step.status]||'🟡 待运行';element.className='status '+step.status;}const marker=$(`[data-nav-status="${n}"]`);if(marker)marker.dataset.state=step.status;const info=$(`[data-message="${n}"]`);if(info)info.textContent=step.message||'';const img=$(`[data-preview="${n}"]`);const path=typeof step.preview==='string'?step.preview:step.preview?.path;if(img&&fileURL(path)){const url=fileURL(path);if(img.dataset.path!==url){img.src=url+'?t='+Date.now();img.dataset.path=url;}img.hidden=false;}else if(img)img.hidden=true;}
+function render(next){state=next;globalThis.MRIVersionNavigation?.render(next);if(!dirty){config=structuredClone(next.config||config);fillForm();}const statusText={pending:'待运行',passed:'通过',error:'冲突 / 失败',running:'运行中',stopped_with_result:'已停止 · 最优解已保存'};for(const step of next.steps||[]){const n=step.number;const element=$(`[data-status="${n}"]`);if(element){element.textContent=statusText[step.status]||'🟡 待运行';element.className='status '+step.status;}const marker=$(`[data-nav-status="${n}"]`);if(marker)marker.dataset.state=step.status;const info=$(`[data-message="${n}"]`);if(info)info.textContent=step.message||'';const img=$(`[data-preview="${n}"]`);const path=typeof step.preview==='string'?step.preview:step.preview?.path;if(img&&fileURL(path)){const url=fileURL(path);if(img.dataset.path!==url){img.src=url+'?t='+Date.now();img.dataset.path=url;}img.hidden=false;}else if(img)img.hidden=true;}
 renderPreflight(next.preflight||next.preflight_result);renderSeeds(next.seeds||[]);$('#sampling-details').textContent=JSON.stringify(next.sampling||next.sampling_info||next.symmetry||{},null,2);renderArtifacts(next.artifacts||{});renderRecommendations(next);renderCandidateLayouts(next);renderTimeline(next);renderSolverBudget(next.solver_preflight);renderIslands(next);renderPhysicsState(next);validatePreviewSelection(next);
 const job=next.job||{};$('#job-box').className='job '+job.status;$('#job-title').textContent=next.busy?'第 '+job.step+' 步正在运行':job.status==='failed'?'运行失败':job.status==='stopped_with_result'?'已停止 · 最优解已保存':job.status==='cancelled'?'已停止':job.status==='completed'?'当前工序完成':'等待运行';const progress=next.progress||job.progress||{};const evaluations=progress.field_evaluations??progress.global_evaluations??job.evaluations??job.field_evaluations;$('#job-detail').textContent=job.error||[evaluations!==undefined?'已完成 '+evaluations+' 次优化求场':null,job.stage,job.message].filter(Boolean).join(' · ')||'多岛短程探索 → 逐轮晋级 → 成对补偿精修';
 $$('[data-run],#preflight-button,#select-seeds,#apply-json,[data-path],[data-preset],#solver-preflight-button,#apply-budget-suggestion').forEach(e=>e.disabled=Boolean(next.busy));if(next.solver_preflight?.valid===false)$$('[data-run="5"]').forEach(e=>e.disabled=true);$('#cancel-button').disabled=!next.busy;if(next.error&&job.status==='failed')message(next.error,true);renderConsole(next);renderCanvas(next);
@@ -340,5 +352,45 @@ window.visualViewport?.addEventListener('resize',scheduleWorkbenchLayout,{passiv
 document.fonts?.ready.then(scheduleWorkbenchLayout);
 scheduleWorkbenchLayout();
 </script>
+<!-- MRI_VERSION_SCRIPT_START -->
+<script id="version-navigation-script">
+(function(root){
+ 'use strict';
+ const cookieName='mri_v6_active_port';
+ function validPort(value){return /^\d{1,5}$/.test(String(value))&&Number(value)>0&&Number(value)<=65535?Number(value):null;}
+ function targets(version,origin,cookie=''){
+  const location=new URL(origin),host=['localhost','127.0.0.1'].includes(location.hostname)?location.hostname:'127.0.0.1';
+  const entry=cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith(cookieName+'='));
+  const active=entry?validPort(entry.slice(cookieName.length+1)):null;
+  const current=validPort(location.port);
+  return {v5:'http://'+host+':8764/',v6:'http://'+host+':'+(active||(version==='v6'&&current?current:8765))+'/'};
+ }
+ let navigation,button,menu;
+ function render(next){
+  if(!root.document)return;
+  navigation=root.document.getElementById('version-navigation');if(!navigation)return;
+  const version=navigation.dataset.version;
+  if(version==='v6'&&next?.busy&&validPort(root.location.port))root.document.cookie=cookieName+'='+root.location.port+'; Path=/; SameSite=Strict';
+  const links=targets(version,root.location.origin,root.document.cookie);
+  navigation.querySelectorAll('[data-engine]').forEach(link=>{link.href=links[link.dataset.engine];if(link.dataset.engine===version)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
+  root.document.getElementById('version-current').textContent=version==='v5'?'V5 · 固定源':'V6 · 阵列互耦';
+ }
+ function close(){if(menu){menu.hidden=true;button.setAttribute('aria-expanded','false');}}
+ function init(){
+  navigation=root.document.getElementById('version-navigation');if(!navigation||navigation.dataset.bound)return;
+  navigation.dataset.bound='true';button=root.document.getElementById('version-menu-button');menu=root.document.getElementById('version-menu');
+  button.addEventListener('click',()=>{render();menu.hidden=!menu.hidden;button.setAttribute('aria-expanded',String(!menu.hidden));});
+  button.addEventListener('keydown',event=>{if(event.key==='ArrowDown'){event.preventDefault();render();menu.hidden=false;button.setAttribute('aria-expanded','true');menu.querySelector('a').focus();}});
+  navigation.addEventListener('keydown',event=>{if(event.key==='Escape'){close();button.focus();}});
+  navigation.querySelectorAll('[data-engine]').forEach(link=>link.addEventListener('click',close));
+  root.document.addEventListener('click',event=>{if(!navigation.contains(event.target))close();});
+  render();
+ }
+ root.MRIVersionNavigation={targets,render,init};
+ if(typeof module!=='undefined'&&module.exports)module.exports=root.MRIVersionNavigation;
+ if(root.document){if(root.document.readyState==='loading')root.document.addEventListener('DOMContentLoaded',init,{once:true});else init();}
+})(typeof window==='undefined'?globalThis:window);
+</script>
+<!-- MRI_VERSION_SCRIPT_END -->
 </body>
 </html>

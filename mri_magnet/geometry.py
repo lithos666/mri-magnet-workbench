@@ -1,6 +1,6 @@
 """Read the supplied IO-ring geometry and construct constrained design variants."""
 from __future__ import annotations
-from dataclasses import dataclass, asdict, replace
+from dataclasses import dataclass, asdict
 from pathlib import Path
 import hashlib
 import json

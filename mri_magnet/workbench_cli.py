@@ -3,7 +3,6 @@ import argparse
 import json
 from pathlib import Path
 from .workbench import Workbench
-from .workbench_config import default_config
 from .serialization import jsonable
 
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy.optimize import differential_evolution
-from .objectives import check_performance, feasibility_score
+from .objectives import check_performance, feasibility_score, pareto_front
 from .serialization import jsonable, save_json
 from .identity import canonical_physical_sha256, raw_design_sha256
 from .search_moves import reflect_interval, compensated_steps
@@ -32,27 +32,6 @@ def _design_key(design):
     if 'rings' in value: return canonical_physical_sha256(value)
     physical = {k: v for k, v in value.items() if k != 'name'}
     return hashlib.sha256(json.dumps(physical, sort_keys=True, allow_nan=False).encode()).hexdigest()
-
-
-def pareto_front(records):
-    valid, seen = [], set()
-    for row in records:
-        if not row.get('feasible', False) or not row.get('performance_check', {}).get('valid', True): continue
-        try:
-            field, ppm = (float(row['metrics'][k]) for k in ('mean_norm_T', 'pp_norm_ppm'))
-        except (TypeError, ValueError, KeyError): continue
-        if not math.isfinite(field) or not math.isfinite(ppm) or field < 0 or ppm < 0: continue
-        key = row.get('canonical_physical_sha256')
-        if key and key in seen: continue
-        if key: seen.add(key)
-        valid.append(row)
-    result = []
-    for row in valid:
-        field, ppm = row['metrics']['mean_norm_T'], row['metrics']['pp_norm_ppm']
-        if not any(o['metrics']['mean_norm_T'] >= field and o['metrics']['pp_norm_ppm'] <= ppm
-                   and (o['metrics']['mean_norm_T'] > field or o['metrics']['pp_norm_ppm'] < ppm) for o in valid):
-            result.append(row)
-    return sorted(result, key=lambda r: (r['metrics']['pp_norm_ppm'], -r['metrics']['mean_norm_T'], r['candidate_id']))
 
 
 def _prepare_variables(variables):
@@ -129,10 +108,16 @@ def _run_optimization_impl(variables, build_design, evaluate_design, validate_de
     numerical cache entries contain metrics, never another candidate's metadata.
     """
     started = time.perf_counter(); variables = _prepare_variables(variables)
-    for name, value, lower in (('max_evaluations', max_evaluations, 1), ('popsize', popsize, 1), ('maxiter', maxiter, 0)):
+    for name, value, lower in (('max_evaluations', max_evaluations, 1), ('maxiter', maxiter, 0)):
         if isinstance(value, bool) or int(value) != value or value < lower:
             raise ValueError(name+' must be a valid integer')
-    max_evaluations, popsize, maxiter = int(max_evaluations), int(popsize), int(maxiter)
+    max_evaluations, maxiter = int(max_evaluations), int(maxiter)
+    # The legacy CLI multiplier is a fallback only. An explicitly sized init
+    # array is the single authority for the actual SciPy DE population.
+    if population_size is None:
+        if isinstance(popsize, bool) or int(popsize) != popsize or popsize < 1:
+            raise ValueError('popsize must be a valid integer')
+        popsize = int(popsize)
     if isinstance(active_set_evaluations,bool) or int(active_set_evaluations)!=active_set_evaluations or active_set_evaluations<0:
         raise ValueError('active_set_evaluations must be a nonnegative integer')
     if (isinstance(local_refine_evaluations,bool) or int(local_refine_evaluations)!=local_refine_evaluations
@@ -403,6 +388,7 @@ def _run_optimization_impl(variables, build_design, evaluate_design, validate_de
             active_budget = max_evaluations-reserve-lp_reserve
             round_info.update(warm_starts_inserted=warm_count, population_not_shrunk_for_budget=True,
                 population_policy='explicit' if population_size is not None else 'popsize_times_dimension',
+                legacy_population_multiplier=popsize if population_size is None else None,
                 initial_local_fraction=initial_local_fraction,initial_sigma=initial_sigma,
                 initial_scale_mode=initial_scale_mode,initial_sigma_mm=initial_sigma_mm,
                 warm_local_fraction=warm_local_fraction,warm_local_rows=warm_local_rows,
@@ -418,7 +404,7 @@ def _run_optimization_impl(variables, build_design, evaluate_design, validate_de
                 'warm_local_rows':warm_local_rows,'local_center_audit':local_center_audit})
             try:
                 result = differential_evolution(objective, bounds=list(zip(low, high)), integrality=integer,
-                    init=population, maxiter=maxiter, popsize=popsize, strategy='best1bin',
+                    init=population, maxiter=maxiter, strategy='best1bin',
                     seed=int(rng.integers(0, 2**31-1)), tol=0., atol=0., polish=False,
                     updating='immediate', workers=1, callback=callback)
                 round_info.update(state='converged' if result.success else 'iteration_limit', message=str(result.message))
@@ -647,7 +633,7 @@ def _run_optimization_impl(variables, build_design, evaluate_design, validate_de
         'iteration_logs': logs, 'elapsed_seconds': time.perf_counter()-started,
         'files': {'records': 'optimization_records.jsonl', 'rejections': 'optimization_rejections.jsonl',
                   'iterations': 'optimization_iterations.jsonl','events':'optimization_events.jsonl', 'result': 'optimization_result.json'}}
-    result = {'state': state, 'records': records, 'baseline': baseline, 'pareto': pareto_front(records),
+    result = {'state': state, 'records': records, 'baseline': baseline, 'pareto': pareto_front(records, requirements),
               'diagnostic_best': min(records, key=lambda r: feasibility_score(r['metrics'], requirements)), 'metadata': metadata}
     save_json(output/'optimization_result.json', result)
     return result
@@ -683,7 +669,7 @@ def run_optimization(*args,graceful_stop=False,**kwargs):
             'all_completed_records_saved':True,'graceful_stop':True,'global_optimum_proven':False,
             'independent_dense_validation_required':True,'elapsed_seconds':time.perf_counter()-runtime.get('started',time.perf_counter())}
         result={'state':state,'records':records,'baseline':runtime.get('baseline') or (records[0] if records else None),
-            'pareto':pareto_front(records),'diagnostic_best':min(records,key=lambda r:feasibility_score(r['metrics'],runtime.get('requirements'))) if records else None,
+            'pareto':pareto_front(records,runtime.get('requirements')),'diagnostic_best':min(records,key=lambda r:feasibility_score(r['metrics'],runtime.get('requirements'))) if records else None,
             'metadata':metadata}
         save_json(output/'optimization_result.json',result)
         return result
@@ -726,7 +712,7 @@ def run_topology_optimization(topologies, process, limits, search, evaluator, ch
                 raise
         run = run_optimization(variables, builder, evaluator, checker, topology, folder,
             seed=int(settings['seed'])+index, max_evaluations=allocation,
-            popsize=settings['popsize'], maxiter=settings['maxiter'], requirements=requirements,
+            popsize=settings.get('popsize',3), maxiter=settings['maxiter'], requirements=requirements,
             numeric_cache=cache, warm_starts=warm_starts, candidate_prefix='t%02d_' % (index+1),
             event_callback=forward_event if event_callback is not None else None,
             topology_index=index+1,global_evaluation_offset=offset, **options)
@@ -746,7 +732,7 @@ def run_topology_optimization(topologies, process, limits, search, evaluator, ch
         'monitor_errors':callback_state['errors'],
         'field_budget_excludes_seed_selection_and_dense_validation': True, 'files': {'result': 'optimization_result.json'},
         'global_optimum_proven': False, 'performance_feasible_records': sum(r['feasible'] for r in records)}
-    result = {'baseline': first_baseline, 'records': records, 'pareto': pareto_front(records), 'metadata': metadata,
+    result = {'baseline': first_baseline, 'records': records, 'pareto': pareto_front(records, requirements), 'metadata': metadata,
         'diagnostic_best': min(records, key=lambda r: feasibility_score(r['metrics'], requirements)) if records else None}
     save_json(output/'optimization_result.json', result)
     with (output/'optimization_records.jsonl').open('w', encoding='utf-8') as stream:

@@ -24,3 +24,10 @@ code_snapshot.txt
 !.env.example
 .DS_Store
 Thumbs.db
+
+# Build and review output is never an editable source tree.
+/outputs/
+/build/
+/dist/
+*.egg-info/
+/support/代码备份/

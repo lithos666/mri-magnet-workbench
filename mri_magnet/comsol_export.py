@@ -17,7 +17,6 @@ from pathlib import Path
 import re
 import subprocess
 import time
-import uuid
 
 from .geometry import envelope_limits, validate_design
 from .identity import canonical_physical_sha256, raw_design_sha256, canonical_phase_deg, CANONICAL_SCHEMA_VERSION

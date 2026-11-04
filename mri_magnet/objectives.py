@@ -1,5 +1,8 @@
 """Hard performance gates, balanced ranking and physical Pareto selection."""
 import math
+from .design_contract import (check_performance, scoring_options, requirements_for,
+                              record_metrics, valid_record_metrics, record_is_feasible,
+                              eligible_records, preferred_records)
 
 
 def resolve_requirements(options, baseline_metrics, seed_metrics):
@@ -49,26 +52,6 @@ def resolve_requirements(options, baseline_metrics, seed_metrics):
             'rule': 'strict epsilon feasibility; rank feasible set using declared scoring'}
 
 
-def check_performance(metrics, requirements=None):
-    req = requirements or {}
-    field, ppm = float(metrics['mean_norm_T']), float(metrics['pp_norm_ppm'])
-    if not math.isfinite(field) or field <= 0 or not math.isfinite(ppm) or ppm < 0:
-        return {'valid': False, 'normalized_violation': float('inf'), 'violations': ['invalid field metrics']}
-    minimum = float(req.get('min_mean_norm_T', 0.))
-    tolerance = float(req.get('field_tolerance_T', 0.))
-    maximum = req.get('max_pp_norm_ppm')
-    deficit = max(0., minimum-tolerance-field)
-    excess = max(0., ppm-maximum) if maximum is not None else 0.
-    violation = deficit/max(float(req.get('field_scale_T', minimum or field)), 1e-12)
-    if maximum is not None: violation += excess/max(float(maximum), 1.)
-    notes = []
-    if deficit > 0: notes.append('mean field below required minimum')
-    if excess > 0: notes.append('peak-to-peak ppm exceeds required maximum')
-    return {'valid': not notes, 'normalized_violation': violation, 'violations': notes,
-            'min_mean_norm_T': minimum, 'actual_mean_norm_T': field, 'max_pp_norm_ppm': maximum,
-            'actual_pp_norm_ppm': ppm, 'field_tolerance_T': tolerance}
-
-
 def feasibility_score(metrics, requirements=None):
     """A lower score is better; feasible values are always strictly negative.
 
@@ -90,24 +73,6 @@ def feasibility_score(metrics, requirements=None):
     return -1./(1.+float(metrics['pp_norm_ppm'])/scale)
 
 
-def scoring_options(options=None):
-    """Validate the scoring contract shared by solver, archive and UI."""
-    raw = dict(options or {})
-    result = {'mode': raw.get('mode', 'ppm'),
-              'field_weight': float(raw.get('field_weight', .5)),
-              'field_gain_scale': float(raw.get('field_gain_scale', .10)),
-              'ppm_scale': float(raw.get('ppm_scale', 1000.))}
-    if result['mode'] not in ('ppm', 'balanced'):
-        raise ValueError('scoring.mode must be ppm or balanced')
-    weight = result['field_weight']
-    if not math.isfinite(weight) or not 0. <= weight <= 1.:
-        raise ValueError('scoring.field_weight must be between 0 and 1')
-    for key in ('field_gain_scale', 'ppm_scale'):
-        if not math.isfinite(result[key]) or result[key] <= 0.:
-            raise ValueError('scoring.'+key+' must be finite and positive')
-    return result
-
-
 def balanced_components(metrics, requirements=None):
     """Readable, dimensionless components of the balanced objective."""
     req = requirements or {}
@@ -123,13 +88,10 @@ def balanced_components(metrics, requirements=None):
             'settings': options}
 
 
-def _record_metrics(row):
-    return row.get('validation_metrics') or row.get('dense_metrics') or row.get('metrics') or {}
-
-
-def _record_is_feasible(row, requirements):
-    check = row.get('manufacturing_check') or row.get('manufacturing_audit') or {}
-    return check.get('valid', True) and check_performance(_record_metrics(row), requirements)['valid']
+# Historical private imports remain usable without a second selection policy.
+_record_metrics = record_metrics
+_record_is_feasible = record_is_feasible
+_valid_record_metrics = valid_record_metrics
 
 
 def pareto_front(records, requirements=None):
@@ -138,7 +100,7 @@ def pareto_front(records, requirements=None):
     No convex-front assumption is made. Returned records are the originals,
     so callers retain exact candidate identities and dense-evaluation traces.
     """
-    feasible = [row for row in records if _record_metrics(row) and _record_is_feasible(row, requirements)]
+    feasible = eligible_records(records, requirements)
     ordered = sorted(feasible,key=lambda row: (-float(_record_metrics(row)['mean_norm_T']),
                                                float(_record_metrics(row)['pp_norm_ppm'])))
     result, best_ppm, best_field = [], float('inf'), None
@@ -178,7 +140,7 @@ def select_validation_candidates(records, requirements=None, limit=5):
     """
     if limit < 1:
         return []
-    rows = list(records)
+    rows = [row for row in preferred_records(records) if valid_record_metrics(row)]
     roles = pareto_roles(rows, requirements)
     selected = []
     for role in ('balanced', 'lowest_ppm', 'high_field'):
@@ -187,7 +149,7 @@ def select_validation_candidates(records, requirements=None, limit=5):
             selected.append(row)
     front = pareto_front(rows, requirements)
     ordered = sorted(front, key=lambda row: feasibility_score(_record_metrics(row), requirements))
-    ordered += sorted(rows, key=lambda row: (not (row.get('manufacturing_check') or {}).get('valid', True),
+    ordered += sorted(rows, key=lambda row: (not record_is_feasible(row, requirements),
                                             feasibility_score(_record_metrics(row), requirements)))
     for row in ordered:
         if not any(row is item for item in selected):

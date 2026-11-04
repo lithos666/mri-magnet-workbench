@@ -14,7 +14,7 @@ import scipy
 import magpylib
 
 from .geometry import Design, load_source, envelope_limits, validate_design
-from .manufacturing import audit_manufacturing, make_manufacturing_seed, radial_packing_bounds, column_partition_check
+from .manufacturing import audit_manufacturing, make_manufacturing_seed, column_partition_check
 from .parameterization import get_search_space, packing_for_design
 from .field import FieldEngine
 from .metrics import evaluate_design

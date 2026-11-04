@@ -1,7 +1,7 @@
 """Optional bounded planar preview; its field work is separate from search."""
 from pathlib import Path
 from copy import deepcopy
-import json,time,html,os
+import json,time,os
 from collections import OrderedDict
 import numpy as np
 from .geometry import Design
@@ -9,7 +9,7 @@ from .field import FieldEngine
 from .identity import canonical_physical_sha256
 from .layout import _configure_font,layout_comparison_manifest
 from .serialization import save_json,jsonable
-from .objectives import check_performance,feasibility_score
+from .objectives import feasibility_score
 
 
 class EvolutionMonitor:

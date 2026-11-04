@@ -19,6 +19,7 @@ from .serialization import save_json, jsonable
 from .workbench_config import default_config, merge_config, validate_spec
 from .workbench_domains import make_sample, plot_samples
 from .objectives import check_performance, feasibility_score
+from .design_contract import requirements_for
 from .identity import canonical_physical_sha256
 from .config_schema import canonicalize_config
 
@@ -27,18 +28,6 @@ STEP_NAMES = ('模式与指标', '包络与打印工艺', '拓扑合成与起点
 
 class CancelledError(BaseException):
     """Propagate through the numerical core without being mistaken for a bad design."""
-
-
-def requirements_for(config):
-    target = config['target']
-    maximum=target.get('max_ppm')
-    scoring=deepcopy(config.get('scoring',{'mode':'ppm'}))
-    return {'min_mean_norm_T': float(target['min_field_mT'])*1e-3,
-        'max_pp_norm_ppm': None if maximum is None else float(maximum), 'field_tolerance_T': 0.,
-        'field_scale_T': float(target['min_field_mT'])*1e-3,
-        'ppm_scale': max(float(maximum if maximum is not None else scoring.get('ppm_scale',1000.)), 1.),
-        'scoring':scoring,
-        'rule': 'absolute hard limits, then balanced field/ppm scoring' if scoring.get('mode')=='balanced' else 'absolute user limits; strict feasibility then minimize ppm'}
 
 
 def envelope_for(config):
@@ -52,7 +41,7 @@ def envelope_for(config):
 def solver_settings_for(config, stop_file=''):
     """One settings adapter for the displayed budget plan and actual scheduler."""
     s=config['solver']
-    return {'seed':config['seed'],'max_evaluations':s['max_evaluations'],'popsize':3,'maxiter':s['maxiter'],
+    return {'seed':config['seed'],'max_evaluations':s['max_evaluations'],'maxiter':s['maxiter'],
         'optimization_options':{'population_size':s['population_size'],'initial_local_fraction':s['initial_local_fraction'],
             'initial_scale_mode':'physical_mm','initial_sigma_mm':s['initial_sigma_mm'],
             'local_refine_evaluations':s['local_refine_evaluations'],'pair_refine_fraction':s['pair_refine_fraction'],

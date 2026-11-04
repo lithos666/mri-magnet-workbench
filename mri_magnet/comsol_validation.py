@@ -20,7 +20,7 @@ from dataclasses import replace
 import numpy as np
 
 from .comsol_export import generate_java_model, _native_log_text
-from .comsol_bridge import write_field_csv, compare_field_tables,read_field_csv
+from .comsol_bridge import write_field_csv,read_field_csv
 from .geometry import Design
 from .identity import canonical_physical_sha256,canonical_phase_deg
 from .metrics import field_metrics

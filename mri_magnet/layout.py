@@ -13,7 +13,7 @@ from typing import Any, Mapping
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch, Rectangle
+from matplotlib.patches import Rectangle
 from matplotlib import font_manager
 import numpy as np
 
