@@ -125,4 +125,3 @@ def preferred_records(records):
 def eligible_records(records, requirements=None):
     """The same reviewed, finite input set for new or already-loaded selectors."""
     return [row for row in preferred_records(records) if record_is_feasible(row, requirements)]
-
